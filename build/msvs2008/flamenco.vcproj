@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<VisualStudioProject
+	ProjectType="Visual C++"
+	Version="9,00"
+	Name="flamenco"
+	ProjectGUID="{B550E140-C7A9-11DD-8871-001C23879E34}"
+	RootNamespace="flamenco"
+	Keyword="Win32Proj"
+	TargetFrameworkVersion="196613"
+	>
+	<Platforms>
+		<Platform
+			Name="Win32"
+		/>
+	</Platforms>
+	<ToolFiles>
+	</ToolFiles>
+	<Configurations>
+		<Configuration
+			Name="debug|Win32"
+			OutputDirectory="..\..\tmp\tests\$(ConfigurationName)"
+			IntermediateDirectory="..\..\tmp\tests\$(ConfigurationName)"
+			ConfigurationType="0"
+			CharacterSet="1"
+			>
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="bjam $(ConfigurationName)"
+				ReBuildCommandLine="bjam -a $(ConfigurationName)"
+				CleanCommandLine="bjam --clean $(ConfigurationName)"
+				Output=""
+				PreprocessorDefinitions=""
+				IncludeSearchPath="..\..\include"
+				ForcedIncludes=""
+				AssemblySearchPath=""
+				ForcedUsingAssemblies=""
+				CompileAsManaged=""
+			/>
+		</Configuration>
+		<Configuration
+			Name="release|Win32"
+			OutputDirectory="..\..\tmp\tests\$(ConfigurationName)"
+			IntermediateDirectory="..\..\tmp\tests\$(ConfigurationName)"
+			ConfigurationType="0"
+			CharacterSet="1"
+			WholeProgramOptimization="1"
+			>
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="bjam $(ConfigurationName)"
+				ReBuildCommandLine="bjam -a $(ConfigurationName)"
+				CleanCommandLine="bjam --clean $(ConfigurationName)"
+				Output=""
+				PreprocessorDefinitions=""
+				IncludeSearchPath="..\..\include"
+				ForcedIncludes=""
+				AssemblySearchPath=""
+				ForcedUsingAssemblies=""
+				CompileAsManaged=""
+			/>
+		</Configuration>
+	</Configurations>
+	<References>
+	</References>
+	<Files>
+		<Filter
+			Name="flamenco"
+			>
+			<File
+				RelativePath="..\..\include\flamenco\flamenco.h"
+				>
+			</File>
+			<Filter
+				Name="core"
+				>
+				<File
+					RelativePath="..\..\include\flamenco\core\config.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\flamenco\core\effect.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\flamenco\core\mixer.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\flamenco\core\pin.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\flamenco\core\types.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\flamenco\core\utility.h"
+					>
+				</File>
+			</Filter>
+		</Filter>
+		<File
+			RelativePath="..\..\src\test.cpp"
+			>
+		</File>
+	</Files>
+	<Globals>
+	</Globals>
+</VisualStudioProject>

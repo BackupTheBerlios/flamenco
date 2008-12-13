@@ -1,0 +1,11 @@
+path-constant ROOT : . ;
+path-constant BIN : $(ROOT)/bin ;
+
+project flamenco
+    : build-dir tmp
+    : requirements
+        <include>include
+        <define>_SCL_SECURE_NO_WARNINGS
+        <warnings>all
+    ;
+build-project src ;

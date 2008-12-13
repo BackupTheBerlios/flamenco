@@ -1,0 +1,1 @@
+..\..\bjam %* --toolset=msvc -d1

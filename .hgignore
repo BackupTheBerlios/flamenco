@@ -1,0 +1,7 @@
+syntax: glob
+*.ncb
+*.suo
+build/*/*.user
+boost-build.jam
+regexp:^tmp
+regexp:^bin
