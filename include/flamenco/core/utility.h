@@ -85,6 +85,14 @@ public:
         }
     }
     
+    // Если не описать конструктор копирования, компилятор сгенерирует его сам,
+    // причем вовсе не из шаблонного конструктора ниже :)
+    reference( const reference & ref )
+        : mObject(ref.mObject)
+    {
+        incRef();
+    }
+    
     template <class Y>
     reference( reference<Y> ref )
         : mObject(&*ref)

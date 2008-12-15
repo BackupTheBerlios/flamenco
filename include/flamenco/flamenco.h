@@ -10,8 +10,12 @@
 #include <flamenco/core/types.h>
 #include <flamenco/core/config.h>
 #include <flamenco/core/utility.h>
+#include <flamenco/core/atomic_types.h>
 #include <flamenco/core/pin.h>
 #include <flamenco/core/effect.h>
 #include <flamenco/core/mixer.h>
+
+// Источники звука.
+#include <flamenco/input/procedural.h>
 
 #endif // _FLAMENCO_FLAMENCO_H_

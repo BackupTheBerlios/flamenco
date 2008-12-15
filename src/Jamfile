@@ -1,2 +1,2 @@
-exe flamenco : [ glob *.cpp ] ;
+exe flamenco : [ glob-tree *.cpp ] ;
 install flamenco.exe : flamenco : <location>$(BIN) ;

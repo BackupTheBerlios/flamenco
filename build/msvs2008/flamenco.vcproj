@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="windows-1251"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="9.00"
 	Name="flamenco"
 	ProjectGUID="{B550E140-C7A9-11DD-8871-001C23879E34}"
 	RootNamespace="flamenco"
@@ -18,8 +18,8 @@
 	<Configurations>
 		<Configuration
 			Name="debug|Win32"
-			OutputDirectory="..\..\tmp\tests\$(ConfigurationName)"
-			IntermediateDirectory="..\..\tmp\tests\$(ConfigurationName)"
+			OutputDirectory="..\..\tmp\src\msvc-9.0\$(ConfigurationName)\threading-multi\"
+			IntermediateDirectory="$(OutDir)"
 			ConfigurationType="0"
 			CharacterSet="1"
 			>
@@ -28,7 +28,7 @@
 				BuildCommandLine="bjam $(ConfigurationName)"
 				ReBuildCommandLine="bjam -a $(ConfigurationName)"
 				CleanCommandLine="bjam --clean $(ConfigurationName)"
-				Output=""
+				Output="$(OutDir)\flamenco.exe"
 				PreprocessorDefinitions=""
 				IncludeSearchPath="..\..\include"
 				ForcedIncludes=""
@@ -39,8 +39,8 @@
 		</Configuration>
 		<Configuration
 			Name="release|Win32"
-			OutputDirectory="..\..\tmp\tests\$(ConfigurationName)"
-			IntermediateDirectory="..\..\tmp\tests\$(ConfigurationName)"
+			OutputDirectory="..\..\tmp\src\msvc-9.0\$(ConfigurationName)\threading-multi\"
+			IntermediateDirectory="$(OutDir)"
 			ConfigurationType="0"
 			CharacterSet="1"
 			WholeProgramOptimization="1"
@@ -50,7 +50,7 @@
 				BuildCommandLine="bjam $(ConfigurationName)"
 				ReBuildCommandLine="bjam -a $(ConfigurationName)"
 				CleanCommandLine="bjam --clean $(ConfigurationName)"
-				Output=""
+				Output="$(OutDir)\flamenco.exe"
 				PreprocessorDefinitions=""
 				IncludeSearchPath="..\..\include"
 				ForcedIncludes=""
@@ -74,6 +74,10 @@
 				Name="core"
 				>
 				<File
+					RelativePath="..\..\include\flamenco\core\atomic_types.h"
+					>
+				</File>
+				<File
 					RelativePath="..\..\include\flamenco\core\config.h"
 					>
 				</File>
@@ -86,6 +90,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\src\core\pin.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\..\include\flamenco\core\pin.h"
 					>
 				</File>
@@ -95,6 +103,18 @@
 				</File>
 				<File
 					RelativePath="..\..\include\flamenco\core\utility.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="input"
+				>
+				<File
+					RelativePath="..\..\src\input\procedural.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\flamenco\input\procedural.h"
 					>
 				</File>
 			</Filter>

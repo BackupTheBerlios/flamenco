@@ -14,14 +14,14 @@ namespace flamenco
 // Пин (элемент цепочки звуковых фильтров).
 class Pin : public refcountable
 {
-public:
-    Pin();
-    virtual ~Pin() = 0 {}
-    
 protected:
+    Pin();
+    virtual ~Pin() = 0;
+    friend class reference<Pin>;
+    
     // Заполняет буферы каналов звуковыми данными.
     // Размер каждого буфера - CHANNEL_BUFFER_SIZE_IN_SAMPLES семплов.
-    virtual void process( u16 * left, u16 * right ) = 0;
+    virtual void process( s16 * left, s16 * right ) = 0;
     friend class Mixer;
     
     // Присоединен ли пин к другому пину или микшеру.

@@ -14,14 +14,13 @@ namespace flamenco
 // Эффект - пин, обрабатывающий данные другого пина.
 class Effect : public Pin
 {
-public:
+protected:
     // Создает эффект и присоединяет к нему входной пин.
     Effect( reference<Pin> input );
     
-private:
     // Обычно вызывает mInputPin.process() и обрабатывает
     // заполненные им буферы. Но может и заполнять их самостоятельно.
-    virtual void process( u16 * left, u16 * right ) = 0;
+    virtual void process( s16 * left, s16 * right ) = 0;
 };
 
 } // namespace flamenco
