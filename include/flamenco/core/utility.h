@@ -41,11 +41,11 @@ protected:
     }
     
 protected:
-    __forceinline bool isOk() const
+    inline bool isOk() const
     {
         return MAGIC == mIsOk;
     }
-    __forceinline s32 refcount() const
+    inline s32 refcount() const
     {
         return mRefCount;
     }

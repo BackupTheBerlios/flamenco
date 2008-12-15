@@ -25,7 +25,7 @@ protected:
     friend class Mixer;
     
     // Присоединен ли пин к другому пину или микшеру.
-    __forceinline bool connected() const
+    inline bool connected() const
     {
         return mIsConnected;
     }
@@ -34,7 +34,7 @@ private:
     bool mIsConnected;
     
     // Пометить пин как присоединенный или отоединенный.
-    __forceinline void setConnected( bool connected )
+    inline void setConnected( bool connected )
     {
         mIsConnected = connected;
     }
