@@ -30,7 +30,7 @@
 				CleanCommandLine="bjam --clean $(ConfigurationName)"
 				Output="$(OutDir)\flamenco.exe"
 				PreprocessorDefinitions=""
-				IncludeSearchPath="..\..\include"
+				IncludeSearchPath="..\..\include;&quot;$(DXSDK_DIR)\Include&quot;"
 				ForcedIncludes=""
 				AssemblySearchPath=""
 				ForcedUsingAssemblies=""
@@ -52,7 +52,7 @@
 				CleanCommandLine="bjam --clean $(ConfigurationName)"
 				Output="$(OutDir)\flamenco.exe"
 				PreprocessorDefinitions=""
-				IncludeSearchPath="..\..\include"
+				IncludeSearchPath="..\..\include;&quot;$(DXSDK_DIR)\Include&quot;"
 				ForcedIncludes=""
 				AssemblySearchPath=""
 				ForcedUsingAssemblies=""
@@ -83,6 +83,14 @@
 				</File>
 				<File
 					RelativePath="..\..\include\flamenco\core\effect.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\flamenco\core\lock.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\src\core\mixer.cpp"
 					>
 				</File>
 				<File

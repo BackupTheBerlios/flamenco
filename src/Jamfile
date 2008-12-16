@@ -1,2 +1,14 @@
+import os ;
+local DXSDK = [ os.environ DXSDK_DIR ] ;
+
+local LIBRARIES = dsound user32 dxerr9 ;
+lib $(LIBRARIES) ;
+project
+    : requirements
+        <include>$(DXSDK)/include
+        <library>$(LIBRARIES)
+        <library-path>$(DXSDK)/Lib/x86
+    ;
+
 exe flamenco : [ glob-tree *.cpp ] ;
 install flamenco.exe : flamenco : <location>$(BIN) ;

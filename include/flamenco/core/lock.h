@@ -1,0 +1,68 @@
+/*
+ libflamenco - lightweight and efficient software sound mixing library.
+ (c) Sergei Cherepanov, 2008. Licensed under GPL license.
+ 
+ Потокобезопасные типы.
+ */
+#pragma once
+#ifndef _FLAMENCO_CORE_LOCK_H_
+#define _FLAMENCO_CORE_LOCK_H_
+
+#include <windows.h>
+
+namespace flamenco
+{
+
+// RAII-объект блокировки.
+template<class T, void (T::*lock)(), void (T::*unlock)()>
+class scoped_lock : noncopyable
+{
+public:
+    scoped_lock( T & object )
+        : mObject(object)
+    {
+        (mObject.*lock)();
+    }
+    ~scoped_lock()
+    {
+        (mObject.*unlock)();
+    }
+    
+private:    
+    T & mObject;
+};
+
+// Критическая секция.
+class critical_section : noncopyable
+{
+private:
+    inline void enter()
+    {
+        EnterCriticalSection(&mCS);
+    }
+    inline void leave()
+    {
+        LeaveCriticalSection(&mCS);
+    }
+    
+public:
+    // Тип для RAII-объекта для межпоточной блокировки.
+    typedef scoped_lock<critical_section,
+                        &critical_section::enter, &critical_section::leave> lock;
+    
+    critical_section()
+    {
+        InitializeCriticalSection(&mCS);
+    }
+    ~critical_section()
+    {
+        DeleteCriticalSection(&mCS);
+    }
+    
+private:
+    CRITICAL_SECTION mCS;
+};
+
+} // namespace flamenco
+
+#endif // _FLAMENCO_CORE_LOCK_H_

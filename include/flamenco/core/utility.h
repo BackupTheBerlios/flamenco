@@ -179,6 +179,12 @@ private:
     }
 };
 
+// Заполнение звукового буфера тишиной.
+inline void set_silence( s16 * buffer, u32 sizeInSamples )
+{
+    memset(buffer, 0, sizeInSamples << 1);
+}
+
 } // namespace flamenco
 
 #endif // _FLAMENCO_CORE_UTILITY_H_

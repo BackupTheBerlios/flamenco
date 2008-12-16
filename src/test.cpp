@@ -5,27 +5,91 @@
  Пример использования библиотеки.
  */
 #include <flamenco/flamenco.h>
+#include <dsound.h>
+#include <dxerr9.h>
+#include <iostream>
+
+#pragma warning(disable: 4127)
+#define check_directx(func)                                                          \
+    do { HRESULT hr = (func);                                                        \
+         if (FAILED(hr))                                                             \
+         {                                                                           \
+             std::cerr << #func " failed: " << DXGetErrorDescription9A(hr) << '\n';  \
+             exit(1);                                                                \
+         }                                                                           \
+    } while (false)
+
 
 int main()
 {
     using namespace flamenco;
+    
+    LPDIRECTSOUND8 directSound;
+    
+    // Создаем интерфейс DirectSound.
+    check_directx(DirectSoundCreate8(&GUID_NULL, &directSound, NULL));
+    check_directx(directSound->SetCooperativeLevel(GetForegroundWindow(), DSSCL_PRIORITY));
+    
+    // Получаем первичный буфер.
+    LPDIRECTSOUNDBUFFER primaryBuffer = NULL;
+    DSBUFFERDESC descr;
+    ZeroMemory(&descr, sizeof(DSBUFFERDESC));
+    descr.dwSize = sizeof(DSBUFFERDESC);
+    descr.dwFlags = DSBCAPS_PRIMARYBUFFER;
+    descr.lpwfxFormat = NULL;
+    check_directx(directSound->CreateSoundBuffer(&descr, &primaryBuffer, NULL));
+    
+    // Изменяем формат первичного буфера.
+    WAVEFORMATEX wfx;
+    ZeroMemory(&wfx, sizeof(WAVEFORMATEX));
+    wfx.cbSize          = sizeof(WAVEFORMATEX);
+    wfx.wFormatTag      = WAVE_FORMAT_PCM;
+    wfx.nChannels       = 2;
+    wfx.nSamplesPerSec  = 44100;
+    wfx.wBitsPerSample  = 16;
+    wfx.nBlockAlign     = wfx.wBitsPerSample / 8 * wfx.nChannels;
+    wfx.nAvgBytesPerSec = (u32)wfx.nSamplesPerSec * wfx.nBlockAlign;
+    check_directx(primaryBuffer->SetFormat(&wfx));
+    primaryBuffer->Release();
+    
+    
+    // Формат буфера микшера.
+    const u32 MIXING_BUFFER_SIZE = 2 * MIXER_BUFFER_SIZE_IN_SAMPLES * sizeof(s16);
+    DSBUFFERDESC desc;
+    ZeroMemory(&desc, sizeof(DSBUFFERDESC));
+    desc.dwSize          = sizeof(DSBUFFERDESC);
+    desc.dwFlags         = DSBCAPS_STATIC | DSBCAPS_GETCURRENTPOSITION2;
+    desc.dwBufferBytes   = MIXING_BUFFER_SIZE;
+    desc.guid3DAlgorithm = DS3DALG_DEFAULT;
+    desc.lpwfxFormat     = &wfx;
+
+    // Создаем буфер.
+    LPDIRECTSOUNDBUFFER soundBuffer = NULL;
+    check_directx(directSound->CreateSoundBuffer(&desc, &soundBuffer, NULL));
+    
+    
+    
+    // Инициализация flamenco.
     reference<Pin> sine = Sine::create(1000);
     
-    /*
-    reference<Pin> sine = Kto-to->newSine(1000);// reference<Pin>(new Sine(1000));
-    reference<Effect> volumepan = reference<Effect>(new VolumePan(sine));
-    Mixer.attach(volumepan);
+    Mixer & mixer = Mixer::singleton();
+    mixer.attach(sine);
     
-    input.process(left, right);
-    for i in CHANNEL_BUFFER_SIZE_IN_SAMPLES:
-        left[i] *= volumeLeftPan;
-        right[i] *= volumeRightPan;
     
-    setSilence(leftMixed, rightMixed);
-    for e in effects:
-        setSilence(left, right);
-        e.process(left, right);
-        add(left, leftMixed);
-        add(right, rightMixed);
-    */
+    // Заполнение звукового буфера.
+    s16 * bufferPtr;
+    u32 bufferSize;
+    check_directx(soundBuffer->Lock(0, MIXING_BUFFER_SIZE, reinterpret_cast<void**>(&bufferPtr),
+                                    &bufferSize, NULL, NULL, DSBLOCK_ENTIREBUFFER));
+    // Заполняем обе половинки буфера.
+    mixer.mix(bufferPtr);
+    mixer.mix(bufferPtr + MIXER_BUFFER_SIZE_IN_SAMPLES);
+    check_directx(soundBuffer->Unlock(bufferPtr, bufferSize, NULL, 0));
+    
+    soundBuffer->Play(0, 0, 0);
+    Sleep(1000);
+    
+    // Освобождение ресурсов.
+    soundBuffer->Release();
+    directSound->Release();
 }

@@ -10,6 +10,7 @@
 #include <flamenco/core/types.h>
 #include <flamenco/core/config.h>
 #include <flamenco/core/utility.h>
+#include <flamenco/core/lock.h>
 #include <flamenco/core/atomic_types.h>
 #include <flamenco/core/pin.h>
 #include <flamenco/core/effect.h>
