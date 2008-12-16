@@ -45,7 +45,7 @@ int main()
     wfx.cbSize          = sizeof(WAVEFORMATEX);
     wfx.wFormatTag      = WAVE_FORMAT_PCM;
     wfx.nChannels       = 2;
-    wfx.nSamplesPerSec  = 44100;
+    wfx.nSamplesPerSec  = FREQUENCY;
     wfx.wBitsPerSample  = 16;
     wfx.nBlockAlign     = wfx.wBitsPerSample / 8 * wfx.nChannels;
     wfx.nAvgBytesPerSec = (u32)wfx.nSamplesPerSec * wfx.nBlockAlign;
@@ -54,12 +54,12 @@ int main()
     
     
     // Формат буфера микшера.
-    const u32 MIXING_BUFFER_SIZE = 2 * MIXER_BUFFER_SIZE_IN_SAMPLES * sizeof(s16);
+    const u32 MIXER_BUFFER_SIZE_IN_BYTES = MIXER_BUFFER_SIZE_IN_SAMPLES * sizeof(s16);
     DSBUFFERDESC desc;
     ZeroMemory(&desc, sizeof(DSBUFFERDESC));
     desc.dwSize          = sizeof(DSBUFFERDESC);
     desc.dwFlags         = DSBCAPS_STATIC | DSBCAPS_GETCURRENTPOSITION2;
-    desc.dwBufferBytes   = MIXING_BUFFER_SIZE;
+    desc.dwBufferBytes   = 2 * MIXER_BUFFER_SIZE_IN_BYTES;
     desc.guid3DAlgorithm = DS3DALG_DEFAULT;
     desc.lpwfxFormat     = &wfx;
 
@@ -70,8 +70,7 @@ int main()
     
     
     // Инициализация flamenco.
-    reference<Pin> sine = Sine::create(1000);
-    
+    reference<Pin> sine = Sine::create(500);
     Mixer & mixer = Mixer::singleton();
     mixer.attach(sine);
     
@@ -79,14 +78,14 @@ int main()
     // Заполнение звукового буфера.
     s16 * bufferPtr;
     u32 bufferSize;
-    check_directx(soundBuffer->Lock(0, MIXING_BUFFER_SIZE, reinterpret_cast<void**>(&bufferPtr),
-                                    &bufferSize, NULL, NULL, DSBLOCK_ENTIREBUFFER));
+    check_directx(soundBuffer->Lock(0, 0, reinterpret_cast<void **>(&bufferPtr), &bufferSize,
+                                    NULL, NULL, DSBLOCK_ENTIREBUFFER));
     // Заполняем обе половинки буфера.
     mixer.mix(bufferPtr);
     mixer.mix(bufferPtr + MIXER_BUFFER_SIZE_IN_SAMPLES);
     check_directx(soundBuffer->Unlock(bufferPtr, bufferSize, NULL, 0));
     
-    soundBuffer->Play(0, 0, 0);
+    soundBuffer->Play(0, 0, DSBPLAY_LOOPING);
     Sleep(1000);
     
     // Освобождение ресурсов.
