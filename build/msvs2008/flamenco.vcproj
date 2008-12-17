@@ -125,6 +125,14 @@
 					RelativePath="..\..\include\flamenco\input\procedural.h"
 					>
 				</File>
+				<File
+					RelativePath="..\..\src\input\wav.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\flamenco\input\wav.h"
+					>
+				</File>
 			</Filter>
 		</Filter>
 		<File

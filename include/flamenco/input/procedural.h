@@ -35,6 +35,20 @@ private:
     // содержит свои get и set, код был бы похож на лапшу.
 };
 
+// Источник шума
+class Noise : public Pin
+{
+public:
+    // Создание источника шума
+    static reference<Noise> create();
+
+private:
+    Noise();
+
+    // Заполняет буферы каналов шумом
+    void process( s16 * left, s16 * right );
+};
+
 } // namespace flamenco
 
 #endif // _FLAMENCO_INPUT_PROCEDURAL_H_

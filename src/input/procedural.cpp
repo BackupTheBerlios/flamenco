@@ -52,3 +52,26 @@ reference<Sine> Sine::create( u32 frequency )
 {
     return reference<Sine>(new Sine(frequency));
 }
+
+// Конструктор
+Noise::Noise()
+{
+}
+
+// Заполнение буфера шумом
+void Noise::process( s16 * left, s16 * right )
+{
+    for (u32 i = 0; i < CHANNEL_BUFFER_SIZE_IN_SAMPLES; ++i)
+    {
+        *left++  = static_cast<s16>(rand());
+        *right++ = static_cast<s16>(rand());
+    }
+}
+
+// Создание источника шума
+reference<Noise> Noise::create()
+{
+    return reference<Noise>(new Noise());
+}
+
+// 

@@ -18,5 +18,6 @@
 
 // Источники звука.
 #include <flamenco/input/procedural.h>
+#include <flamenco/input/wav.h>
 
 #endif // _FLAMENCO_FLAMENCO_H_

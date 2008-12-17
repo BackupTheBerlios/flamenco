@@ -74,10 +74,13 @@ int main()
     
     
     // Инициализация flamenco.
-    reference<Pin> sine = Sine::create(521);
+    reference<Pin> wave1 = Wav::create("input1.wav", true);
+    reference<Pin> wave2 = Wav::create("input2.wav", true);
+    reference<Pin> wave3 = Wav::create("input3.wav", true);
     Mixer & mixer = Mixer::singleton();
-    mixer.attach(sine);
-    
+    mixer.attach(wave1);
+    mixer.attach(wave2);
+    mixer.attach(wave3);
     
     // Заполнение звукового буфера.
     s16 * bufferPtr;
