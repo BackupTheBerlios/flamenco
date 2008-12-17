@@ -55,11 +55,14 @@ int main()
     
     // Формат буфера микшера.
     const u32 MIXER_BUFFER_SIZE_IN_BYTES = MIXER_BUFFER_SIZE_IN_SAMPLES * sizeof(s16);
+    // Размер звукового буфера должен быть больше 100 ms, иначе GetCurrentPosition()
+    // будет выдавать неправильные данные.
+    const u32 SOUND_BUFFER_SIZE_IN_BYTES = 10 * MIXER_BUFFER_SIZE_IN_BYTES;
     DSBUFFERDESC desc;
     ZeroMemory(&desc, sizeof(DSBUFFERDESC));
     desc.dwSize          = sizeof(DSBUFFERDESC);
-    desc.dwFlags         = DSBCAPS_STATIC | DSBCAPS_GETCURRENTPOSITION2;
-    desc.dwBufferBytes   = 2 * MIXER_BUFFER_SIZE_IN_BYTES;
+    desc.dwFlags         = DSBCAPS_LOCSOFTWARE | DSBCAPS_GETCURRENTPOSITION2;
+    desc.dwBufferBytes   = SOUND_BUFFER_SIZE_IN_BYTES;
     desc.guid3DAlgorithm = DS3DALG_DEFAULT;
     desc.lpwfxFormat     = &wfx;
 
@@ -70,7 +73,7 @@ int main()
     
     
     // Инициализация flamenco.
-    reference<Pin> sine = Sine::create(500);
+    reference<Pin> sine = Sine::create(521);
     Mixer & mixer = Mixer::singleton();
     mixer.attach(sine);
     
@@ -85,8 +88,27 @@ int main()
     mixer.mix(bufferPtr + MIXER_BUFFER_SIZE_IN_SAMPLES);
     check_directx(soundBuffer->Unlock(bufferPtr, bufferSize, NULL, 0));
     
+    // Проигрываем звук и дописываем данные по ходу.
     soundBuffer->Play(0, 0, DSBPLAY_LOOPING);
-    Sleep(1000);
+    u32 writeOffset = MIXER_BUFFER_SIZE_IN_BYTES * 2;
+    for (;;)
+    {
+        u32 cursorPos;
+        soundBuffer->GetCurrentPosition(&cursorPos, NULL);
+        
+        // Определяем, нужно ли дописать очередную порцию данных.
+        u32 offset = (SOUND_BUFFER_SIZE_IN_BYTES + writeOffset - cursorPos) % SOUND_BUFFER_SIZE_IN_BYTES;
+        if (offset > MIXER_BUFFER_SIZE_IN_BYTES)
+        {
+            check_directx(soundBuffer->Lock(writeOffset, MIXER_BUFFER_SIZE_IN_BYTES,
+                              reinterpret_cast<void **>(&bufferPtr), &bufferSize,
+                              NULL, NULL, 0));
+            mixer.mix(bufferPtr);
+            check_directx(soundBuffer->Unlock(bufferPtr, bufferSize, NULL, 0));
+            writeOffset = (writeOffset + MIXER_BUFFER_SIZE_IN_BYTES) % SOUND_BUFFER_SIZE_IN_BYTES;
+        }
+        Sleep(LATENCY_MSEC >> 1);
+    }
     
     // Освобождение ресурсов.
     soundBuffer->Release();
