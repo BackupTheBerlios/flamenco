@@ -79,8 +79,8 @@ void Mixer::mix( s16 * buffer )
         // Примешиваем данные в итоговый буфер.
         for (u32 i = 0; i < CHANNEL_BUFFER_SIZE_IN_SAMPLES; ++i)
         {
-            buffer[i << 1]       += mBufferL[i];
-            buffer[(i << 1) + 1] += mBufferR[i];
+            buffer[i << 1]       = clamp(static_cast<s32>(buffer[i << 1]) + mBufferL[i]);
+            buffer[(i << 1) + 1] = clamp(static_cast<s32>(buffer[(i << 1) + 1]) + mBufferR[i]);
         }
     }
 }

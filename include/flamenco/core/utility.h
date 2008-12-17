@@ -185,6 +185,12 @@ inline void set_silence( s16 * buffer, u32 sizeInSamples )
     memset(buffer, 0, sizeInSamples << 1);
 }
 
+// Преобразование s32 в s16 с насыщением.
+inline s16 clamp( s32 value )
+{
+    return static_cast<s16>(value < -32768 ? -32768 : value > 32767 ? 32767 : value);
+}
+
 } // namespace flamenco
 
 #endif // _FLAMENCO_CORE_UTILITY_H_
