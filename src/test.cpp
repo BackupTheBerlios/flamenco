@@ -8,6 +8,7 @@
 #include <dsound.h>
 #include <dxerr9.h>
 #include <iostream>
+#include <conio.h>
 
 #pragma warning(disable: 4127)
 #define check_directx(func)                                                          \
@@ -65,7 +66,7 @@ int main()
     desc.dwBufferBytes   = SOUND_BUFFER_SIZE_IN_BYTES;
     desc.guid3DAlgorithm = DS3DALG_DEFAULT;
     desc.lpwfxFormat     = &wfx;
-
+    
     // Создаем буфер.
     LPDIRECTSOUNDBUFFER soundBuffer = NULL;
     check_directx(directSound->CreateSoundBuffer(&desc, &soundBuffer, NULL));
@@ -91,7 +92,7 @@ int main()
     // Проигрываем звук и дописываем данные по ходу.
     soundBuffer->Play(0, 0, DSBPLAY_LOOPING);
     u32 writeOffset = MIXER_BUFFER_SIZE_IN_BYTES * 2;
-    for (;;)
+    while (!_kbhit())
     {
         u32 cursorPos;
         soundBuffer->GetCurrentPosition(&cursorPos, NULL);
