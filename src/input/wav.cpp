@@ -1,6 +1,5 @@
 #include <flamenco/flamenco.h>
 #include <fstream>
-#include <iostream>
 
 using namespace flamenco;
 
@@ -72,7 +71,6 @@ void Wav::process( s16 * left, s16 * right )
         {
             if (mIsLooped)
             {
-                std::cout << "RESET!\n";
                 mCurrentSample = 0;
                 ptr = mSamples;
                 continue;
