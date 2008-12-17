@@ -107,6 +107,7 @@ int main()
             check_directx(soundBuffer->Unlock(bufferPtr, bufferSize, NULL, 0));
             writeOffset = (writeOffset + MIXER_BUFFER_SIZE_IN_BYTES) % SOUND_BUFFER_SIZE_IN_BYTES;
         }
+        // Не нужно опрашивать GetCurrentPosition() слишком часто.
         Sleep(LATENCY_MSEC >> 1);
     }
     

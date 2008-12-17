@@ -30,7 +30,7 @@ public:
     // ”станавливает новое значение, возвращает старое.
     inline u32 set( u32 value )
     {
-        _InterlockedExchange(&mValue, value);
+        return _InterlockedExchange(&mValue, value);
     }
 
 private:
