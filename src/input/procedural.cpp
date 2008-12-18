@@ -5,7 +5,7 @@
  Реализация процедурных источников звука.
  */
 #include <flamenco/flamenco.h>
-#define _USE_MATH_DEFINES
+#define _USE_MATH_DEFINES // Включение макросов-определений (M_PI)
 #include <cmath>
 
 using namespace flamenco;
@@ -53,12 +53,8 @@ reference<Sine> Sine::create( u32 frequency )
     return reference<Sine>(new Sine(frequency));
 }
 
-// Конструктор
-Noise::Noise()
-{
-}
 
-// Заполнение буфера шумом
+// Заполнение каналов случайными числами.
 void Noise::process( s16 * left, s16 * right )
 {
     for (u32 i = 0; i < CHANNEL_BUFFER_SIZE_IN_SAMPLES; ++i)
@@ -68,10 +64,8 @@ void Noise::process( s16 * left, s16 * right )
     }
 }
 
-// Создание источника шума
+// Создание источника белого шума
 reference<Noise> Noise::create()
 {
     return reference<Noise>(new Noise());
 }
-
-// 
