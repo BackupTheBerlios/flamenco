@@ -1,3 +1,9 @@
+/*
+ libflamenco - lightweight and efficient software sound mixing library.
+ (c) Trickster Games, 2008. Licensed under GPL license.
+ 
+ Источник звука из wav-файла.
+ */
 #pragma once
 #ifndef _FLAMENCO_INPUT_WAV_H_
 #define _FLAMENCO_INPUT_WAV_H_
@@ -5,7 +11,7 @@
 namespace flamenco
 {
 
-// Источник гармонического звука.
+// Источник звука из wav-файла.
 class Wav : public Pin
 {
 public:
