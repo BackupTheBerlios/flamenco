@@ -38,6 +38,31 @@ private:
     mutable __declspec(align(32)) volatile s32 mValue;
 };
 
+// Ѕулевый потокобезопасный тип.
+//  опирование запрещено т.к. тип не предназначен дл€ полноценной замены bool.
+class atomic_bool : noncopyable
+{
+public:
+    atomic_bool( bool value )
+        : mValue(value) // «десь можно не беспокоитьс€ о доступе из другого потока :)
+        {}
+    
+    // ¬озвращает значение переменной.
+    inline bool value() const
+    {
+        return 0 != _InterlockedCompareExchange(&mValue, 0, 0);
+    }
+    // ”станавливает новое значение, возвращает старое.
+    inline u32 set( bool value )
+    {
+        return 0 != _InterlockedExchange(&mValue, value);
+    }
+
+private:
+    // Mutable, т.к. получение значени€ сделано через присваивание.
+    mutable __declspec(align(32)) volatile s32 mValue;
+};
+
 } // namespace flamenco
 
 #endif // _FLAMENCO_CORE_ATOMICTYPES_H_

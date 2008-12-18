@@ -15,19 +15,19 @@ namespace flamenco
 class Wav : public Pin
 {
 public:
-    // Открытие wav файла
-    static reference<Wav> create( const char * path, bool looped = false );
-    
-    // Деструктор
     ~Wav();
     
+    // Создание источника звука.
+    static reference<Wav> create( const char * path );
+    
+    // Флаг зацикленности звука.
+    atomic_bool looping;
+    
+    
 private:
-    // Скрытый конструктор
-    Wav( const char * path, bool looped );
-
-    // Заполняет буферы каналов звуковыми данными.
+    Wav( const char * path );
     void process( s16 * left, s16 * right );
-
+    
     // Количество каналов
     u32 mChannels;
     
@@ -36,15 +36,12 @@ private:
     
     // Указатель на начало семплов
     s16 * mSamples;
-
+    
     // Общее количество семплов
     u32 mSamplesCount;
-
+    
     // Текущий семпл
     u32 mCurrentSample;
-
-    // Зацикленность звука
-    bool mIsLooped;
 };
 
 } // namespace flamenco

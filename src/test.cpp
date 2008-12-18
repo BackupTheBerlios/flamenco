@@ -74,13 +74,13 @@ int main()
     
     
     // Инициализация flamenco.
-    reference<Pin> wave1 = Wav::create("input1.wav", true);
-    reference<Pin> wave2 = Wav::create("input2.wav", true);
-    reference<Pin> wave3 = Wav::create("input3.wav", true);
+    reference<Wav> wave1 = Wav::create("input.wav");
+    //reference<Pin> wave2 = Wav::create("input2.wav");
+    //reference<Pin> wave3 = Wav::create("input3.wav");
     Mixer & mixer = Mixer::singleton();
     mixer.attach(wave1);
-    mixer.attach(wave2);
-    mixer.attach(wave3);
+    //mixer.attach(wave2);
+    //mixer.attach(wave3);
     
     // Заполнение звукового буфера.
     s16 * bufferPtr;
@@ -95,7 +95,7 @@ int main()
     // Проигрываем звук и дописываем данные по ходу.
     soundBuffer->Play(0, 0, DSBPLAY_LOOPING);
     u32 writeOffset = MIXER_BUFFER_SIZE_IN_BYTES * 2;
-    while (!_kbhit())
+    while (true)
     {
         u32 cursorPos;
         soundBuffer->GetCurrentPosition(&cursorPos, NULL);
@@ -113,6 +113,18 @@ int main()
         }
         // Не нужно опрашивать GetCurrentPosition() слишком часто.
         Sleep(LATENCY_MSEC >> 1);
+        
+        if (_kbhit())
+        {
+            switch (_getch())
+            {
+            case 'l':
+                wave1->looping.set(!wave1->looping.value());
+                continue;
+            }
+            // Если нажата любая другая клавиша - выходим.
+            break;
+        }   
     }
     
     // Освобождение ресурсов.
