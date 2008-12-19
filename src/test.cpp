@@ -77,9 +77,11 @@ int main()
     reference<Pin> sine = Sine::create(400);
     reference<Wav> wave = Wav::create("input.wav");
     reference<Pin> noise = Noise::create();
+    
+    reference<VolumePan> vp = VolumePan::create(wave, 1.0f, 0.0f);
     Mixer & mixer = Mixer::singleton();
     //mixer.attach(sine);
-    mixer.attach(wave);
+    mixer.attach(vp);
     //mixer.attach(noise);
     
     // Заполнение звукового буфера.
@@ -118,6 +120,14 @@ int main()
         {
             switch (_getch())
             {
+            case '+':
+                vp->pan.set(vp->pan.value() + 0.1f);
+                continue;
+            
+            case '-':
+                vp->pan.set(vp->pan.value() - 0.1f);
+                continue;
+            
             case 'l':
                 wave->looping.set(!wave->looping.value());
                 continue;

@@ -20,4 +20,7 @@
 #include <flamenco/input/procedural.h>
 #include <flamenco/input/wav.h>
 
+// Ёффекты.
+#include <flamenco/effect/volumepan.h>
+
 #endif // _FLAMENCO_FLAMENCO_H_
