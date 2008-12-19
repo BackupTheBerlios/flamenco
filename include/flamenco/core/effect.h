@@ -17,10 +17,21 @@ class Effect : public Pin
 protected:
     // Создает эффект и присоединяет к нему входной пин.
     Effect( reference<Pin> input );
+    ~Effect();
     
     // Обычно вызывает mInputPin.process() и обрабатывает
     // заполненные им буферы. Но может и заполнять их самостоятельно.
     virtual void process( f32 * left, f32 * right ) = 0;
+    
+    // Вызов process() для входного пина.
+    inline void process_input_pin( f32 * left, f32 * right )
+    {
+        mInput->process(left, right);
+    }
+    
+private:
+    // Входной пин.
+    reference<Pin> mInput;
 };
 
 } // namespace flamenco

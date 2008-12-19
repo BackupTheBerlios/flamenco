@@ -10,6 +10,8 @@
 
 #include <intrin.h>
 
+// TODO: переписать под шаблон (см. atomic_f32). Проблема - безопасность преобразований.
+
 namespace flamenco
 {
 
@@ -53,11 +55,39 @@ public:
         return 0 != _InterlockedCompareExchange(&mValue, 0, 0);
     }
     // Устанавливает новое значение, возвращает старое.
-    inline u32 set( bool value )
+    inline bool set( bool value )
     {
         return 0 != _InterlockedExchange(&mValue, value);
     }
 
+private:
+    // Mutable, т.к. получение значения сделано через присваивание.
+    mutable __declspec(align(32)) volatile s32 mValue;
+};
+
+// Потокобезопасный тип с плавающей точкой.
+// Копирование запрещено т.к. тип не предназначен для полноценной замены f32.
+class atomic_f32 : noncopyable
+{
+public:
+    atomic_f32( f32 value )
+        // Здесь можно не беспокоиться о доступе из другого потока :)
+        : mValue(*reinterpret_cast<u32 *>(&value))
+        {}
+    
+    // Возвращает значение переменной.
+    inline f32 value() const
+    {
+        u32 value = _InterlockedCompareExchange(&mValue, 0, 0);
+        return *reinterpret_cast<f32 *>(&value);
+    }
+    // Устанавливает новое значение, возвращает старое.
+    inline f32 set( f32 value )
+    {
+        u32 oldValue = _InterlockedExchange(&mValue, *reinterpret_cast<u32 *>(&value));
+        return *reinterpret_cast<f32 *>(&oldValue);
+    }
+    
 private:
     // Mutable, т.к. получение значения сделано через присваивание.
     mutable __declspec(align(32)) volatile s32 mValue;

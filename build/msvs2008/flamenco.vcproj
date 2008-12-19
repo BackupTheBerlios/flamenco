@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="windows-1251"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="9.00"
 	Name="flamenco"
 	ProjectGUID="{B550E140-C7A9-11DD-8871-001C23879E34}"
 	RootNamespace="flamenco"
@@ -82,6 +82,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\src\effect\effect.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\..\include\flamenco\core\effect.h"
 					>
 				</File>
@@ -131,6 +135,18 @@
 				</File>
 				<File
 					RelativePath="..\..\include\flamenco\input\wav.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="effect"
+				>
+				<File
+					RelativePath="..\..\src\effect\volumepan.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\flamenco\effect\volumepan.h"
 					>
 				</File>
 			</Filter>
