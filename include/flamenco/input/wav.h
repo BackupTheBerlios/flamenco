@@ -26,7 +26,7 @@ public:
     
 private:
     Wav( const char * path );
-    void process( s16 * left, s16 * right );
+    void process( f32 * left, f32 * right );
     
     // Количество каналов
     u32 mChannels;

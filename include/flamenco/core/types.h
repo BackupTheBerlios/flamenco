@@ -19,6 +19,9 @@ typedef signed short    s16;
 typedef unsigned long   u32;
 typedef signed long     s32;
 
+// Типы с плавающей точкой.
+typedef float			f32; // Используется для внутреннего представления семпла.
+
 } // namespace flamenco
 
 #endif // _FLAMENCO_CORE_TYPES_H_

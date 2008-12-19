@@ -26,7 +26,7 @@ private:
     Sine( u32 frequency );
     
     // Заполняет буферы каналов звуковыми данными.
-    void process( s16 * left, s16 * right );
+    void process( f32 * left, f32 * right );
     
     // Временной сдвиг синусоиды.
     u32 mTimeShift;
@@ -46,7 +46,7 @@ private:
     Noise() {}
     
     // Заполняет буферы каналов случайными значениями.
-    void process( s16 * left, s16 * right );
+    void process( f32 * left, f32 * right );
 };
 
 } // namespace flamenco

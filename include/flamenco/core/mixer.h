@@ -51,10 +51,10 @@ private:
     PinList mPins;
     // Буферы для левого и правого каналов.
     // На 1 больше для проверки выхода за границы.
-    s16 mBufferL[CHANNEL_BUFFER_SIZE_IN_SAMPLES + 1],
+    f32 mBufferL[CHANNEL_BUFFER_SIZE_IN_SAMPLES + 1],
         mBufferR[CHANNEL_BUFFER_SIZE_IN_SAMPLES + 1];
     // Волшебное значение для проверки выхода за границы буферов.
-    static const s16 MAGIC = 0x900dU;
+    static const f32 MAGIC;
     
     Mixer();
     ~Mixer();

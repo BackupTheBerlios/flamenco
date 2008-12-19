@@ -74,13 +74,13 @@ int main()
     
     
     // Инициализация flamenco.
-    reference<Wav> wave1 = Wav::create("input.wav");
-    //reference<Pin> wave2 = Wav::create("input2.wav");
-    //reference<Pin> wave3 = Wav::create("input3.wav");
+    reference<Pin> sine = Sine::create(400);
+    reference<Wav> wave = Wav::create("input.wav");
+    reference<Pin> noise = Noise::create();
     Mixer & mixer = Mixer::singleton();
-    mixer.attach(wave1);
-    //mixer.attach(wave2);
-    //mixer.attach(wave3);
+    //mixer.attach(sine);
+    mixer.attach(wave);
+    //mixer.attach(noise);
     
     // Заполнение звукового буфера.
     s16 * bufferPtr;
@@ -119,7 +119,7 @@ int main()
             switch (_getch())
             {
             case 'l':
-                wave1->looping.set(!wave1->looping.value());
+                wave->looping.set(!wave->looping.value());
                 continue;
             }
             // Если нажата любая другая клавиша - выходим.

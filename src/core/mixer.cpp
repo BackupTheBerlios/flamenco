@@ -10,8 +10,29 @@
 
 using namespace flamenco;
 
+namespace
+{
+
+// Версия функции set_silence для буфера 16 bit.
+inline void set_silence( s16 * buffer, u32 sizeInSamples )
+{
+    memset(buffer, 0, sizeInSamples << 1);
+}
+
+// Преобразование s32 в s16 с насыщением.
+inline s16 clamp_sample( s32 value )
+{
+    return static_cast<s16>(value < -32768 ? -32768 : value > 32767 ? 32767 : value);
+}
+
+} // namespace
+
 // Критическая секция для доступа к микшеру.
 critical_section Mixer::mCriticalSection;
+
+// Волшебное значение для проверки выхода за границы буферов.
+const f32 Mixer::MAGIC = 5.9742e24f; // Масса Земли :)
+
 
 // Получение ссылки на единственную копию микшера.
 Mixer & Mixer::singleton()
@@ -62,7 +83,7 @@ void Mixer::detach( reference<Pin> pin )
 void Mixer::mix( s16 * buffer )
 {
     // Заполняем выходной буфер тишиной.
-    set_silence(buffer, MIXER_BUFFER_SIZE_IN_SAMPLES);
+    ::set_silence(buffer, MIXER_BUFFER_SIZE_IN_SAMPLES);
     for (PinList::iterator i = mPins.begin(); mPins.end() != i; ++i)
     {
         assert((*i)->connected());
@@ -77,10 +98,11 @@ void Mixer::mix( s16 * buffer )
                MAGIC == mBufferR[CHANNEL_BUFFER_SIZE_IN_SAMPLES]);
         
         // Примешиваем данные в итоговый буфер.
-        for (u32 i = 0; i < CHANNEL_BUFFER_SIZE_IN_SAMPLES; ++i)
+        s16 *left = buffer, *right = buffer + 1;
+        for (u32 i = 0; i < CHANNEL_BUFFER_SIZE_IN_SAMPLES; ++i, left += 2, right += 2)
         {
-            buffer[i << 1]       = clamp(static_cast<s32>(buffer[i << 1]) + mBufferL[i]);
-            buffer[(i << 1) + 1] = clamp(static_cast<s32>(buffer[(i << 1) + 1]) + mBufferR[i]);
+            *left  = clamp_sample(*left  + static_cast<s32>(mBufferL[i] * (1 << 15)));
+            *right = clamp_sample(*right + static_cast<s32>(mBufferR[i] * (1 << 15)));
         }
     }
 }

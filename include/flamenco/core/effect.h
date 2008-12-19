@@ -20,7 +20,7 @@ protected:
     
     // Обычно вызывает mInputPin.process() и обрабатывает
     // заполненные им буферы. Но может и заполнять их самостоятельно.
-    virtual void process( s16 * left, s16 * right ) = 0;
+    virtual void process( f32 * left, f32 * right ) = 0;
 };
 
 } // namespace flamenco

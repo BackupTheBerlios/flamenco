@@ -62,7 +62,7 @@ Wav::Wav( const char * path )
 }
 
 // Заполняем буфер новыми данными из wav файла.
-void Wav::process( s16 * left, s16 * right )
+void Wav::process( f32 * left, f32 * right )
 {
     bool looping = this->looping.value();
     if (!looping && mCurrentSample > mSamplesCount)
@@ -72,8 +72,8 @@ void Wav::process( s16 * left, s16 * right )
     
     for (u32 t = 0; t < CHANNEL_BUFFER_SIZE_IN_SAMPLES; ++t)
     {
-        s16 sample = *left++ = *ptr++;
-        *right++ = (mChannels == 1) ? sample : *ptr++;
+        f32 sample = *left++ = static_cast<f32>(*ptr++) / (1 << 16);
+        *right++ = (mChannels == 1) ? sample : static_cast<f32>(*ptr++) / (1 << 16);
         
         mCurrentSample += mChannels;
         if (mCurrentSample > mSamplesCount)
