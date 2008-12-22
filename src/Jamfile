@@ -1,13 +1,14 @@
 import os ;
 local DXSDK = [ os.environ DXSDK_DIR ] ;
 
-local LIBRARIES = dsound user32 dxerr9 ;
+local LIBRARIES = dsound user32 dxerr9 libwavpack ;
 lib $(LIBRARIES) ;
 project
     : requirements
         <include>$(DXSDK)/include
         <library>$(LIBRARIES)
         <library-path>$(DXSDK)/Lib/x86
+        <library-path>$(BIN)/lib
     ;
 
 exe flamenco : [ glob-tree *.cpp ] ;

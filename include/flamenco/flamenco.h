@@ -19,6 +19,7 @@
 // »сточники звука.
 #include <flamenco/input/procedural.h>
 #include <flamenco/input/wav.h>
+#include <flamenco/input/wavpack.h>
 
 // Ёффекты.
 #include <flamenco/effect/volumepan.h>

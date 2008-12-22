@@ -1,0 +1,7 @@
+import path ;
+PROJECTS = [ glob * ] ;
+
+for local proj in $(PROJECTS)
+{
+    build-project $(proj) ;
+}

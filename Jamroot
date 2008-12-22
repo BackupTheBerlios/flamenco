@@ -8,4 +8,5 @@ project flamenco
         <define>_SCL_SECURE_NO_WARNINGS
         <warnings>all
     ;
+build-project lib ;
 build-project src ;

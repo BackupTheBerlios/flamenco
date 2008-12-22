@@ -1,0 +1,8 @@
+NAME = libwavpack ;
+static-lib $(NAME)
+    : [ glob *.c ]
+    : <warnings>off
+      <include>wavpack
+      <define>WIN32
+    ;
+install . : $(NAME) : <location>$(BIN)/lib ;
