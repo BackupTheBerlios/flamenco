@@ -1,7 +1,7 @@
 import os ;
 local DXSDK = [ os.environ DXSDK_DIR ] ;
 
-local LIBRARIES = dsound user32 dxerr9 libwavpack ;
+local LIBRARIES = dsound user32 dxerr9 libwavpack libogg libvorbis ;
 lib $(LIBRARIES) ;
 project
     : requirements
