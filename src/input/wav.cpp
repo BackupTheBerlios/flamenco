@@ -31,7 +31,7 @@ Wav::Wav( const char * path )
     memset(headerBuffer, 0, sizeof(headerBuffer));
 
     // Считываем заголовок.
-    mInputOffset = fread(headerBuffer, 1, sizeof(headerBuffer), mInput);
+    mInputOffset = static_cast<u32>(fread(headerBuffer, 1, sizeof(headerBuffer), mInput));
     assert(mInputOffset == sizeof(headerBuffer));
     
     // Проверка правильности файла.
@@ -64,7 +64,7 @@ Wav::Wav( const char * path )
     {
         assert(mInputOffset < inputSize);
         u32 p = '    ';
-        mInputOffset += fread(&p, 1, sizeof(p), mInput);
+        mInputOffset += static_cast<u32>(fread(&p, 1, sizeof(p), mInput));
         if (p == 'atad' /* "data" */) 
             break;
     }
@@ -75,14 +75,14 @@ Wav::Wav( const char * path )
     // Создаем буфер для чтения файла
     mSamples = new s16[BUFFER_SIZE_IN_SAMPLES + 1];
     mSamples[BUFFER_SIZE_IN_SAMPLES] = MAGIC;
-    mSampleCount = fread(mSamples, sizeof(s16), BUFFER_SIZE_IN_SAMPLES, mInput);
+    mSampleCount = static_cast<u32>(fread(mSamples, sizeof(s16), BUFFER_SIZE_IN_SAMPLES, mInput));
 }
 
 // Читаем из файла в буфер в зависимости от флага looping
 void Wav::fill(bool looping)
 {
     // Пытаемся заполнить весь буфер за раз
-    mSampleCount = fread(mSamples, sizeof(s16), BUFFER_SIZE_IN_SAMPLES, mInput);
+    mSampleCount = static_cast<u32>(fread(mSamples, sizeof(s16), BUFFER_SIZE_IN_SAMPLES, mInput));
 
     if (looping)
     {
@@ -92,7 +92,7 @@ void Wav::fill(bool looping)
             // Переходим на начало данных в файле
             fseek(mInput, mInputOffset, SEEK_SET);
             // Читаем очередную порцию
-            mSampleCount += fread(mSamples + mSampleCount, sizeof(s16), BUFFER_SIZE_IN_SAMPLES - mSampleCount, mInput);
+            mSampleCount += static_cast<u32>(fread(mSamples + mSampleCount, sizeof(s16), BUFFER_SIZE_IN_SAMPLES - mSampleCount, mInput));
         }
     }
     mIsFinished = (mSampleCount < BUFFER_SIZE_IN_SAMPLES && !looping);

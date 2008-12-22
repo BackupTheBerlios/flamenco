@@ -68,7 +68,7 @@ void WavPack::fill(bool looping)
 // Заполняем левый и правый каналы из внутреннего буфера.
 void WavPack::process( f32 * left, f32 * right )
 {   
-    bool looping = this->looping.value();
+    bool looping = this->looping();
 
     if (!looping && mIsFinished)
         return;
