@@ -19,7 +19,7 @@ Sine::Sine( u32 frequency )
 // Заполнение буфера гармоническим звуком.
 void Sine::process( f32 * left, f32 * right )
 {
-    u32 frequency = this->frequency.value();
+    u32 frequency = this->frequency();
     for (u32 i = 0; i < CHANNEL_BUFFER_SIZE_IN_SAMPLES; ++i)
     {
         f32 value = sinf(2 * static_cast<f32>(M_PI) * frequency * (mTimeShift + i) / FREQUENCY);

@@ -28,7 +28,7 @@ public:
         : mValue(*reinterpret_cast<s32 *>(&value))
         {}
     // Возвращает значение переменной.
-    inline T32 value() const
+    inline T32 operator ()() const
     {
         s32 value = _InterlockedCompareExchange(&mValue, 0, 0);
         return *reinterpret_cast<T32 *>(&value);
@@ -66,7 +66,7 @@ public:
     atomic( bool value )
         : mValue(value)
         {}
-    inline bool value() const
+    inline bool operator()() const
     {
         return 0 != _InterlockedCompareExchange(&mValue, 0, 0);
     }

@@ -9,13 +9,13 @@
 using namespace flamenco;
 
 // Волшебное значение для проверки выхода за границы буферов.
-const s16 Wav::smMagic = 0x90;
+const s16 Wav::MAGIC = 0x900dU;
 // Максимальный размер буфера в семплах
-const u32 Wav::smBufferSizeInSamples = 1 << 16;
+const u32 Wav::BUFFER_SIZE_IN_SAMPLES = 1 << 16;
 
 // Создание источника звука из wav-файла.
 Wav::Wav( const char * path )
-    : mSamples(NULL), mSamplesCount(0), mSamplesCurrent(0),
+    : mSamples(NULL), mSampleCount(0), mSamplesCurrent(0),
       mChannels(0), looping(false), mInputOffset(0), mIsFinished(false)
 {
     if (NULL == (mInput = fopen(path, "rb")))
@@ -73,38 +73,38 @@ Wav::Wav( const char * path )
     fseek(mInput, mInputOffset, SEEK_SET);
 
     // Создаем буфер для чтения файла
-    mSamples = new s16[smBufferSizeInSamples + 1];
-    mSamples[smBufferSizeInSamples] = smMagic;
-    mSamplesCount = fread(mSamples, sizeof(s16), smBufferSizeInSamples, mInput);
+    mSamples = new s16[BUFFER_SIZE_IN_SAMPLES + 1];
+    mSamples[BUFFER_SIZE_IN_SAMPLES] = MAGIC;
+    mSampleCount = fread(mSamples, sizeof(s16), BUFFER_SIZE_IN_SAMPLES, mInput);
 }
 
 // Читаем из файла в буфер в зависимости от флага looping
 void Wav::fill(bool looping)
 {
     // Пытаемся заполнить весь буфер за раз
-    mSamplesCount = fread(mSamples, sizeof(s16), smBufferSizeInSamples, mInput);
+    mSampleCount = fread(mSamples, sizeof(s16), BUFFER_SIZE_IN_SAMPLES, mInput);
 
     if (looping)
     {
         // Цикл необходим для чтения файлов, размер которых меньше буфера
-        while (mSamplesCount < smBufferSizeInSamples)
+        while (mSampleCount < BUFFER_SIZE_IN_SAMPLES)
         {
             // Переходим на начало данных в файле
             fseek(mInput, mInputOffset, SEEK_SET);
             // Читаем очередную порцию
-            mSamplesCount += fread(mSamples + mSamplesCount, sizeof(s16), smBufferSizeInSamples - mSamplesCount, mInput);
+            mSampleCount += fread(mSamples + mSampleCount, sizeof(s16), BUFFER_SIZE_IN_SAMPLES - mSampleCount, mInput);
         }
     }
-    mIsFinished = (mSamplesCount < smBufferSizeInSamples && !looping);
+    mIsFinished = (mSampleCount < BUFFER_SIZE_IN_SAMPLES && !looping);
 
     // Проверка выхода за пределы массива
-    assert(smMagic == mSamples[smBufferSizeInSamples]);
+    assert(MAGIC == mSamples[BUFFER_SIZE_IN_SAMPLES]);
 };
 
 // Заполняем левый и правый каналы из внутреннего буфера.
 void Wav::process( f32 * left, f32 * right )
 {   
-    bool looping = this->looping.value();
+    bool looping = this->looping();
 
     if (!looping && mIsFinished)
         return;
@@ -114,7 +114,7 @@ void Wav::process( f32 * left, f32 * right )
     for (u32 i = 0; i < CHANNEL_BUFFER_SIZE_IN_SAMPLES; ++i)
     {
         // Если буфер подошел к концу
-        if (mSamplesCurrent >= mSamplesCount)
+        if (mSamplesCurrent >= mSampleCount)
         {
             // Начинаем сначала
             mSamplesCurrent = 0;

@@ -36,7 +36,7 @@ VolumePan::VolumePan( reference<Pin> input, f32 volume, f32 pan )
 // Заполняет буферы каналов звуковыми данными.
 void VolumePan::process( f32 * left, f32 * right )
 {
-    f32 volume = clamp_0_1(this->volume.value()), pan = this->pan.value();
+    f32 volume = clamp_0_1(this->volume()), pan = this->pan();
     f32 volumeLeft  = volume * clamp_0_1(1.0f - pan),
         volumeRight = volume * clamp_0_1(1.0f + pan);
     
