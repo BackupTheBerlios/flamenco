@@ -21,7 +21,7 @@ WavPack::WavPack( const char * path )
     // Буфер для ошибок при разборе wv-файла, количество символов - из документации.
     char error[80];
     mInput = WavpackOpenFileInput(path, error, OPEN_NORMALIZE, 0);
-    if (error)
+    if (NULL == mInput)
         throw std::runtime_error(error);
 
     // Получаем количество каналов.
@@ -38,7 +38,7 @@ WavPack::WavPack( const char * path )
     // Создаем буфер для чтения файла.
     mSamples = new s32[smBufferSizeInSamples + 1];
     mSamples[smBufferSizeInSamples] = smMagic;
-    mSamplesCount = WavpackUnpackSamples(mInput, reinterpret_cast<int32_t *>(mSamples), smBufferSizeInSamples);
+    mSamplesCount = WavpackUnpackSamples(mInput, reinterpret_cast<int32_t *>(mSamples), smBufferSizeInSamples / mChannels) * mChannels;
 }
 
 // Читаем из файла в буфер в зависимости от флага looping
@@ -46,8 +46,8 @@ void WavPack::fill(bool looping)
 {
 
     // Пытаемся заполнить весь буфер за раз
-    mSamplesCount = WavpackUnpackSamples(mInput, reinterpret_cast<int32_t *>(mSamples), smBufferSizeInSamples);
-
+    mSamplesCount = WavpackUnpackSamples(mInput, reinterpret_cast<int32_t *>(mSamples), smBufferSizeInSamples / mChannels) * mChannels;
+    
     if (looping)
     {
         // Цикл необходим для чтения файлов, размер которых меньше буфера
@@ -56,11 +56,11 @@ void WavPack::fill(bool looping)
             // Переходим на начало данных в файле
             WavpackSeekSample(mInput, 0);
             // Читаем очередную порцию
-            mSamplesCount += WavpackUnpackSamples(mInput, reinterpret_cast<int32_t *>(mSamples + mSamplesCount), smBufferSizeInSamples - mSamplesCount);
+            mSamplesCount += WavpackUnpackSamples(mInput, reinterpret_cast<int32_t *>(mSamples + mSamplesCount), (smBufferSizeInSamples - mSamplesCount) / mChannels) * mChannels;
         }
     }
     mIsFinished = (mSamplesCount < smBufferSizeInSamples && !looping);
-
+    
     // Проверка выхода за пределы массива
     assert(smMagic == mSamples[smBufferSizeInSamples]);
 };
@@ -88,6 +88,7 @@ void WavPack::process( f32 * left, f32 * right )
         }
         f32 sample = *left++ = *ptr++ / static_cast<f32>(1 << 16);
         *right++ = (mChannels == 1) ? sample : *ptr++ / static_cast<f32>(1 << 16);
+        
         mSamplesCurrent += mChannels;
     }
 }
