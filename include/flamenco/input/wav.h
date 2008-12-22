@@ -24,7 +24,7 @@ public:
     static reference<Wav> create( const char * path );
 
     // Флаг зацикленности звука.
-    atomic_bool looping;
+    atomic<bool> looping;
 
 
 private:
