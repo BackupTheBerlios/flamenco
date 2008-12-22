@@ -25,7 +25,7 @@ void Sine::process( f32 * left, f32 * right )
         f32 value = sinf(2 * static_cast<f32>(M_PI) * frequency * (mTimeShift + i) / FREQUENCY);
         *left++ = *right++ = value;
     }
-    mTimeShift += CHANNEL_BUFFER_SIZE_IN_SAMPLES;
+    mTimeShift = (mTimeShift + CHANNEL_BUFFER_SIZE_IN_SAMPLES) % FREQUENCY;
 }
 
 // Создание нового источника гармонического звука с частотой frequency Гц.
