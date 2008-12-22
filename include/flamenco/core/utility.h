@@ -25,6 +25,13 @@ private:
     noncopyable & operator =( const noncopyable & );
 };
 
+// Статический assert.
+template<bool> struct STATIC_ASSERTION_FAILURE;
+template<> struct STATIC_ASSERTION_FAILURE<true> {};
+#define FLAMENCO_STATIC_ASSERT(expr) \
+    typedef char static_assertion_failure_[sizeof(::flamenco::STATIC_ASSERTION_FAILURE<expr>)];
+
+
 // Класс со встроенным счетчиком ссылок.
 class refcountable : noncopyable
 {

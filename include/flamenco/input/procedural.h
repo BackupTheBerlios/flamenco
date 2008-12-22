@@ -20,7 +20,7 @@ public:
     
     
     // Частота синусоиды.
-    atomic_u32 frequency;
+    atomic<u32> frequency;
     
 private:
     Sine( u32 frequency );
