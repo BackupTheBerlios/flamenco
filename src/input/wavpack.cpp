@@ -9,7 +9,7 @@
 using namespace flamenco;
 
 // Волшебное значение для проверки выхода за границы буферов.
-const s32 WavPack::smMagic = 0x9090;
+const s32 WavPack::smMagic = 0x900d;
 // Максимальный размер буфера в семплах
 const u32 WavPack::smBufferSizeInSamples = 1 << 16;
 
@@ -18,27 +18,27 @@ WavPack::WavPack( const char * path )
     : mSamples(NULL), mSamplesCount(0), mSamplesCurrent(0),
       mChannels(0), looping(false), mIsFinished(false)
 {
-	// Буфер для ошибок при разборе wv-файла, количество символов - из документации.
+    // Буфер для ошибок при разборе wv-файла, количество символов - из документации.
     char error[80];
     mInput = WavpackOpenFileInput(path, error, OPEN_NORMALIZE, 0);
     if (error)
         throw std::runtime_error(error);
 
-	// Получаем количество каналов.
-	mChannels = WavpackGetNumChannels(mInput);
-	if (mChannels != 1 && mChannels != 2)
-		throw std::runtime_error("Too many channels in wav-file");
+    // Получаем количество каналов.
+    mChannels = WavpackGetNumChannels(mInput);
+    if (mChannels != 1 && mChannels != 2)
+        throw std::runtime_error("Too many channels in wav-file");
 
-	// На всякий случай проверяем битность.
-	assert(WavpackGetBitsPerSample(mInput) == 16);
+    // На всякий случай проверяем битность.
+    assert(WavpackGetBitsPerSample(mInput) == 16);
 
-	// Получаем частоту.
-	mFrequency = WavpackGetSampleRate(mInput);
+    // Получаем частоту.
+    mFrequency = WavpackGetSampleRate(mInput);
 
     // Создаем буфер для чтения файла.
     mSamples = new s32[smBufferSizeInSamples + 1];
     mSamples[smBufferSizeInSamples] = smMagic;
-	mSamplesCount = WavpackUnpackSamples(mInput, reinterpret_cast<int32_t *>(mSamples), smBufferSizeInSamples);
+    mSamplesCount = WavpackUnpackSamples(mInput, reinterpret_cast<int32_t *>(mSamples), smBufferSizeInSamples);
 }
 
 // Читаем из файла в буфер в зависимости от флага looping
@@ -54,7 +54,7 @@ void WavPack::fill(bool looping)
         while (mSamplesCount < smBufferSizeInSamples)
         {
             // Переходим на начало данных в файле
-			WavpackSeekSample(mInput, 0);
+            WavpackSeekSample(mInput, 0);
             // Читаем очередную порцию
             mSamplesCount += WavpackUnpackSamples(mInput, reinterpret_cast<int32_t *>(mSamples + mSamplesCount), smBufferSizeInSamples - mSamplesCount);
         }
@@ -96,7 +96,7 @@ void WavPack::process( f32 * left, f32 * right )
 WavPack::~WavPack()
 {
     delete [] mSamples;
-	WavpackCloseFile(mInput);
+    WavpackCloseFile(mInput);
 }
 
 // Создание источника звука из wv-файла.
