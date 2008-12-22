@@ -121,15 +121,15 @@ int main()
             switch (_getch())
             {
             case '+':
-                vp->pan.set(vp->pan.value() + 0.1f);
+                vp->pan.set(vp->pan() + 0.1f);
                 continue;
             
             case '-':
-                vp->pan.set(vp->pan.value() - 0.1f);
+                vp->pan.set(vp->pan() - 0.1f);
                 continue;
             
             case 'l':
-                wave->looping.set(!wave->looping.value());
+                wave->looping.set(!wave->looping());
                 continue;
             }
             // ≈сли нажата люба€ друга€ клавиша - выходим.
