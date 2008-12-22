@@ -13,45 +13,52 @@
 namespace flamenco
 {
 
-
 // Источник звука из wav-файла.
 class Wav : public Pin
 {
 public:
     ~Wav();
-
+    
     // Создание источника звука.
     static reference<Wav> create( const char * path );
-
+    
     // Флаг зацикленности звука.
     atomic<bool> looping;
-
-
+    
+    
 private:
     Wav( const char * path );
-
-	// Помещает данные из буфера в левый и правый каналы
+    
+    // Помещает данные из буфера в левый и правый каналы.
     void process( f32 * left, f32 * right );
-	// Чтение данных из файла во внутренний буфер
-	void fill(bool looping);
-
-    // Количество каналов
+    // Чтение данных из файла во внутренний буфер.
+    void fill(bool looping);
+    
+    // Количество каналов.
     u32 mChannels;
-    // Частота
+    // Частота.
     u32 mFrequency;
-
-    // Буфер для семплов размером CHANNEL_BUFFER_SIZE_IN_SAMPLES * mChannels
+    
+    // Буфер для семплов размером BUFFER_SIZE_IN_SAMPLES.
     s16 * mSamples;
-
-	// MAGIC
-	static const s16 MAGIC;
-
-    // Файл для чтения
+    // Текущий семпл от начала буфера.
+    u32 mSamplesCurrent;
+    // Реальное количество семплов в буфере.
+    u32 mSampleCount;
+    
+    // Файл для чтения.
     FILE * mInput;
-    // Начало блока данных в файле
+    // Начало блока данных в файле.
     u32 mInputOffset;
+    // Признак окончания файла.
+    bool mIsFinished;
+    
+    // Магическое число для проверки массива.
+    static const s16 MAGIC;
+    
+    // Максимальный размер буфера в семплах.
+    static const u32 BUFFER_SIZE_IN_SAMPLES;
 };
-
 
 } // namespace flamenco
 
