@@ -20,6 +20,7 @@
 #include <flamenco/input/procedural.h>
 #include <flamenco/input/wav.h>
 #include <flamenco/input/wavpack.h>
+#include <flamenco/input/ogg.h>
 
 // Ёффекты.
 #include <flamenco/effect/volumepan.h>

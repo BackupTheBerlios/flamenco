@@ -75,7 +75,7 @@ int main()
     
     // Инициализация flamenco.
     reference<Pin> sine = Sine::create(400);
-    reference<Wav> wave = Wav::create("input.wav");
+    reference<Ogg> wave = Ogg::create("input.ogg");
     reference<Pin> noise = Noise::create();
     
     reference<VolumePan> vp = VolumePan::create(wave, 1.0f, 0.0f);
