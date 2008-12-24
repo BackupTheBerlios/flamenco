@@ -34,13 +34,15 @@ private:
     void process( f32 * left, f32 * right );
     // Чтение данных из файла во внутренний буфер
     void fill(bool looping);
+    // Распаковка одной порции данных в буфер
+    u32 unpack(s32 * dst, u32 offset, u32 size);
 
     // Количество каналов
     u32 mChannels;
     // Частота
     u32 mFrequency;
 
-    // Буфер для семплов размером smBufferSizeInSamples
+    // Буфер для семплов размером BUFFER_SIZE_IN_SAMPLES
     s32 * mSamples;
     // Текущий семпл от начала буфера
     u32 mSamplesCurrent;
@@ -53,10 +55,10 @@ private:
     bool mIsFinished;
 
     // Магическое число для проверки массива
-    static const s32 smMagic;
+    static const s32 MAGIC;
 
     // Максимальный размер буфера в семплах
-    static const u32 smBufferSizeInSamples;
+    static const u32 BUFFER_SIZE_IN_SAMPLES;
 };
 
 

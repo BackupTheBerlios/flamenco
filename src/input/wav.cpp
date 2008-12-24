@@ -75,14 +75,20 @@ Wav::Wav( const char * path )
     // Создаем буфер для чтения файла
     mSamples = new s16[BUFFER_SIZE_IN_SAMPLES + 1];
     mSamples[BUFFER_SIZE_IN_SAMPLES] = MAGIC;
-    mSampleCount = static_cast<u32>(fread(mSamples, sizeof(s16), BUFFER_SIZE_IN_SAMPLES, mInput));
+    mSampleCount = unpack(mSamples, 0, BUFFER_SIZE_IN_SAMPLES);
+    //static_cast<u32>(fread(mSamples, sizeof(s16), BUFFER_SIZE_IN_SAMPLES, mInput));
+}
+
+u32 Wav::unpack(s16 * dst, u32 offset, u32 size)
+{
+    return static_cast<u32>(fread(dst + offset, sizeof(s16), size - offset, mInput));
 }
 
 // Читаем из файла в буфер в зависимости от флага looping
 void Wav::fill(bool looping)
 {
     // Пытаемся заполнить весь буфер за раз
-    mSampleCount = static_cast<u32>(fread(mSamples, sizeof(s16), BUFFER_SIZE_IN_SAMPLES, mInput));
+    mSampleCount = unpack(mSamples, 0, BUFFER_SIZE_IN_SAMPLES);
 
     if (looping)
     {
@@ -92,7 +98,8 @@ void Wav::fill(bool looping)
             // Переходим на начало данных в файле
             fseek(mInput, mInputOffset, SEEK_SET);
             // Читаем очередную порцию
-            mSampleCount += static_cast<u32>(fread(mSamples + mSampleCount, sizeof(s16), BUFFER_SIZE_IN_SAMPLES - mSampleCount, mInput));
+            mSampleCount += unpack(mSamples, mSampleCount, BUFFER_SIZE_IN_SAMPLES);
+            //mSampleCount += static_cast<u32>(fread(mSamples + mSampleCount, sizeof(s16), BUFFER_SIZE_IN_SAMPLES - mSampleCount, mInput));
         }
     }
     mIsFinished = (mSampleCount < BUFFER_SIZE_IN_SAMPLES && !looping);

@@ -1,7 +1,7 @@
 /*
  libflamenco - lightweight and efficient software sound mixing library.
  (c) Trickster Games, 2008. Licensed under GPL license.
- 
+
  Реализация источника звука из wav-файла.
  */
 #include <flamenco/flamenco.h>
@@ -75,36 +75,33 @@ Ogg::Ogg( const char * path )
 	// Создаем буфер для чтения файла
 	mSamples = new s16[BUFFER_SIZE_IN_SAMPLES + 1];
 	mSamples[BUFFER_SIZE_IN_SAMPLES] = MAGIC;
+    mSampleCount = unpack(mSamples, 0, BUFFER_SIZE_IN_SAMPLES);
 
-	int current_section;	
-
-	while (mSampleCount < BUFFER_SIZE_IN_SAMPLES)
-	{
-		int result = ov_read(mVorbisFile, reinterpret_cast<char *>(mSamples + mSampleCount / 2), (BUFFER_SIZE_IN_SAMPLES - mSampleCount) , 0, 2, 1, &current_section);
-		if (result == 0)
-			break;
-		else if (result > 0)
-			mSampleCount += result;
-	}
 	// Проверка выхода за пределы массива
 	assert(MAGIC == mSamples[BUFFER_SIZE_IN_SAMPLES]);
 }
 
-// Читаем из файла в буфер в зависимости от флага looping
-void Ogg::fill(bool looping)
+// Распаковка одной порции данных в буфер
+u32 Ogg::unpack(s16 * dst, u32 offset, u32 size)
 {
-	int current_section;		
+    int current_section;
 
-	mSampleCount = 0;
-    // Пытаемся заполнить весь буфер за раз
-	while (mSampleCount < BUFFER_SIZE_IN_SAMPLES)
+    while (offset < size)
 	{
-		int result = ov_read(mVorbisFile, reinterpret_cast<char *>(mSamples + mSampleCount / 2), (BUFFER_SIZE_IN_SAMPLES - mSampleCount) , 0, 2, 1, &current_section);
+		int result = ov_read(mVorbisFile, reinterpret_cast<char *>(dst + offset / 2), (size - offset) , 0, 2, 1, &current_section);
 		if (result == 0)
 			break;
 		else if (result > 0)
-			mSampleCount += result;
+            offset += result;
 	}
+    return offset;
+};
+
+// Читаем из файла в буфер в зависимости от флага looping
+void Ogg::fill(bool looping)
+{
+    // Пытаемся заполнить весь буфер за раз
+	mSampleCount = unpack(mSamples, 0, BUFFER_SIZE_IN_SAMPLES);
 
     if (looping)
     {
@@ -114,14 +111,7 @@ void Ogg::fill(bool looping)
             // Переходим на начало данных в файле
 			ov_pcm_seek(mVorbisFile, 0);
             // Читаем очередную порцию
-			while (mSampleCount < BUFFER_SIZE_IN_SAMPLES)
-			{
-				int result = ov_read(mVorbisFile, reinterpret_cast<char *>(mSamples + mSampleCount / 2), (BUFFER_SIZE_IN_SAMPLES - mSampleCount) , 0, 2, 1, &current_section);
-				if (result == 0)
-					break;
-				else if (result > 0)
-					mSampleCount += result;
-			}
+            mSampleCount += unpack(mSamples, mSampleCount, BUFFER_SIZE_IN_SAMPLES);
         }
     }
     mIsFinished = (mSampleCount < BUFFER_SIZE_IN_SAMPLES && !looping);
@@ -132,7 +122,7 @@ void Ogg::fill(bool looping)
 
 // Заполняем левый и правый каналы из внутреннего буфера.
 void Ogg::process( f32 * left, f32 * right )
-{   
+{
     bool looping = this->looping();
 
     if (!looping && mIsFinished)

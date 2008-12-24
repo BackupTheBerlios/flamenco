@@ -33,6 +33,9 @@ private:
     void process( f32 * left, f32 * right );
     // Чтение данных из файла во внутренний буфер.
     void fill(bool looping);
+    // Распаковка одной порции данных в буфер
+    // Или буфер целиком или его часть.
+    u32 unpack(s16 * dst, u32 offset, u32 size);
     
     // Количество каналов.
     u32 mChannels;

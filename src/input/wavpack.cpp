@@ -9,9 +9,9 @@
 using namespace flamenco;
 
 // Волшебное значение для проверки выхода за границы буферов.
-const s32 WavPack::smMagic = 0x900d;
+const s32 WavPack::MAGIC = 0x900d;
 // Максимальный размер буфера в семплах
-const u32 WavPack::smBufferSizeInSamples = 1 << 16;
+const u32 WavPack::BUFFER_SIZE_IN_SAMPLES = 1 << 16;
 
 // Создание источника звука из wv-файла.
 WavPack::WavPack( const char * path )
@@ -36,33 +36,38 @@ WavPack::WavPack( const char * path )
     mFrequency = WavpackGetSampleRate(mInput);
 
     // Создаем буфер для чтения файла.
-    mSamples = new s32[smBufferSizeInSamples + 1];
-    mSamples[smBufferSizeInSamples] = smMagic;
-    mSamplesCount = WavpackUnpackSamples(mInput, reinterpret_cast<int32_t *>(mSamples), smBufferSizeInSamples / mChannels) * mChannels;
+    mSamples = new s32[BUFFER_SIZE_IN_SAMPLES + 1];
+    mSamples[BUFFER_SIZE_IN_SAMPLES] = MAGIC;
+    mSamplesCount = unpack(mSamples, 0, BUFFER_SIZE_IN_SAMPLES);
+}
+
+// Распаковка одной порции данных в буфер
+u32 WavPack::unpack(s32 * dst, u32 offset, u32 size)
+{
+    return WavpackUnpackSamples(mInput, reinterpret_cast<int32_t*>(dst + offset), (size - offset) / mChannels) * mChannels;
 }
 
 // Читаем из файла в буфер в зависимости от флага looping
 void WavPack::fill(bool looping)
 {
-
     // Пытаемся заполнить весь буфер за раз
-    mSamplesCount = WavpackUnpackSamples(mInput, reinterpret_cast<int32_t *>(mSamples), smBufferSizeInSamples / mChannels) * mChannels;
+    mSamplesCount = unpack(mSamples, 0, BUFFER_SIZE_IN_SAMPLES);
     
     if (looping)
     {
         // Цикл необходим для чтения файлов, размер которых меньше буфера
-        while (mSamplesCount < smBufferSizeInSamples)
+        while (mSamplesCount < BUFFER_SIZE_IN_SAMPLES)
         {
             // Переходим на начало данных в файле
             WavpackSeekSample(mInput, 0);
             // Читаем очередную порцию
-            mSamplesCount += WavpackUnpackSamples(mInput, reinterpret_cast<int32_t *>(mSamples + mSamplesCount), (smBufferSizeInSamples - mSamplesCount) / mChannels) * mChannels;
+            mSamplesCount += unpack(mSamples, mSamplesCount, BUFFER_SIZE_IN_SAMPLES);
         }
     }
-    mIsFinished = (mSamplesCount < smBufferSizeInSamples && !looping);
+    mIsFinished = (mSamplesCount < BUFFER_SIZE_IN_SAMPLES && !looping);
     
     // Проверка выхода за пределы массива
-    assert(smMagic == mSamples[smBufferSizeInSamples]);
+    assert(MAGIC == mSamples[BUFFER_SIZE_IN_SAMPLES]);
 };
 
 // Заполняем левый и правый каналы из внутреннего буфера.
