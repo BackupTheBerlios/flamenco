@@ -5,6 +5,7 @@ local LIBRARIES = dsound user32 dxerr9 libwavpack libogg libvorbis ;
 lib $(LIBRARIES) ;
 project
     : requirements
+        <define>_CRT_SECURE_NO_WARNINGS
         <include>$(DXSDK)/include
         <library>$(LIBRARIES)
         <library-path>$(DXSDK)/Lib/x86

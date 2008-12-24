@@ -48,10 +48,12 @@ typedef struct {
  * ov_open() to avoid problems with incompatable crt.o version linking
  * issues. */
 
+#pragma warning(disable:4244) // Отключение предупреждения о преобразовании int64 в long.
 static int _ov_header_fseek_wrap(FILE *f,ogg_int64_t off,int whence){
   if(f==NULL)return(-1);
   return fseek(f,off,whence);
 }
+#pragma warning(default:4244)
 
 static ov_callbacks OV_CALLBACKS_DEFAULT = {
   (size_t (*)(void *, size_t, size_t, void *))  fread,
