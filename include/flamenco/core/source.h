@@ -13,7 +13,7 @@ namespace flamenco
 
 // Базовый класс для источников данных для декодера.
 // В случае ошибок бросает исключения-наследники std::exception.
-class source
+class source : noncopyable
 {
 public:
     virtual ~source() = 0 {}

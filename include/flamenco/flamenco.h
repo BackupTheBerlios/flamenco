@@ -16,6 +16,7 @@
 #include <flamenco/core/effect.h>
 #include <flamenco/core/mixer.h>
 #include <flamenco/core/source.h>
+#include <flamenco/core/stream.h>
 
 // Источники звука.
 #include <flamenco/input/procedural.h>
