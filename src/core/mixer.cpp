@@ -28,27 +28,27 @@ inline s16 clamp_sample( s32 value )
 } // namespace
 
 // Критическая секция для доступа к микшеру.
-critical_section Mixer::mCriticalSection;
+critical_section mixer::mCriticalSection;
 
 // Волшебное значение для проверки выхода за границы буферов.
-const f32 Mixer::MAGIC = 5.9742e24f; // Масса Земли :)
+const f32 mixer::MAGIC = 5.9742e24f; // Масса Земли :)
 
 
 // Получение ссылки на единственную копию микшера.
-Mixer & Mixer::singleton()
+mixer & mixer::singleton()
 {
-    static Mixer * mixer = NULL;
+    static flamenco::mixer * mixer = NULL;
     if (NULL == mixer)
     {
         critical_section::lock lock(mCriticalSection);
         if (NULL == mixer)
-            mixer = new Mixer();
+            mixer = new flamenco::mixer();
     }
     return *mixer;
 }
 
 // Конструктор.
-Mixer::Mixer()
+mixer::mixer()
 {
     // В конец буферов каналов запишем магическое значение,
     // чтобы отловить выход за границы памяти.
@@ -57,7 +57,7 @@ Mixer::Mixer()
 }
 
 // Присоединение пина.
-void Mixer::attach( reference<Pin> pin )
+void mixer::attach( reference<pin> pin )
 {
     assert(!pin->connected());
     mPins.push_back(pin);
@@ -65,7 +65,7 @@ void Mixer::attach( reference<Pin> pin )
 }
 
 // Отсоединение пина. Если он не присоединен, warning в лог.
-void Mixer::detach( reference<Pin> pin )
+void mixer::detach( reference<pin> pin )
 {
     PinList::iterator i = std::find(mPins.begin(), mPins.end(), pin);
     if (mPins.end() != i)
@@ -76,11 +76,11 @@ void Mixer::detach( reference<Pin> pin )
     }
     else
         // TODO: вывод в user-supplied log.
-        std::clog << "Mixer::detach(): pin is not attached";
+        std::clog << "mixer::detach(): pin is not attached";
 }
 
 // Микширование.
-void Mixer::mix( s16 * buffer )
+void mixer::mix( s16 * buffer )
 {
     // Заполняем выходной буфер тишиной.
     ::set_silence(buffer, MIXER_BUFFER_SIZE_IN_SAMPLES);
@@ -108,7 +108,7 @@ void Mixer::mix( s16 * buffer )
 }
 
 // Деструктор. Нужен для отсоединения пинов.
-Mixer::~Mixer()
+mixer::~mixer()
 {
     for (PinList::iterator i = mPins.begin(); mPins.end() != i; ++i)
     {

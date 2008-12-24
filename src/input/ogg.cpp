@@ -9,9 +9,9 @@
 using namespace flamenco;
 
 // Волшебное значение для проверки выхода за границы буферов.
-const s16 Ogg::MAGIC = 0x900dU;
+const s16 ogg::MAGIC = 0x900dU;
 // Максимальный размер буфера в семплах
-const u32 Ogg::BUFFER_SIZE_IN_SAMPLES = 1 << 16;
+const u32 ogg::BUFFER_SIZE_IN_SAMPLES = 1 << 16;
 
 namespace
 {
@@ -45,7 +45,7 @@ int close_func(void *datasource)
 };
 
 // Создание источника звука из wav-файла.
-Ogg::Ogg( const char * path )
+ogg::ogg( const char * path )
     : mSamples(NULL), mSampleCount(0), mSamplesCurrent(0),
       mChannels(0), looping(false), mIsFinished(false)
 {
@@ -82,7 +82,7 @@ Ogg::Ogg( const char * path )
 }
 
 // Распаковка одной порции данных в буфер
-u32 Ogg::unpack(s16 * dst, u32 offset, u32 size)
+u32 ogg::unpack(s16 * dst, u32 offset, u32 size)
 {
     int current_section;
 
@@ -98,7 +98,7 @@ u32 Ogg::unpack(s16 * dst, u32 offset, u32 size)
 };
 
 // Читаем из файла в буфер в зависимости от флага looping
-void Ogg::fill(bool looping)
+void ogg::fill(bool looping)
 {
     // Пытаемся заполнить весь буфер за раз
 	mSampleCount = unpack(mSamples, 0, BUFFER_SIZE_IN_SAMPLES);
@@ -121,7 +121,7 @@ void Ogg::fill(bool looping)
 };
 
 // Заполняем левый и правый каналы из внутреннего буфера.
-void Ogg::process( f32 * left, f32 * right )
+void ogg::process( f32 * left, f32 * right )
 {
     bool looping = this->looping();
 
@@ -149,14 +149,14 @@ void Ogg::process( f32 * left, f32 * right )
 }
 
 // Деструктор
-Ogg::~Ogg()
+ogg::~ogg()
 {
     delete [] mSamples;
 	ov_clear(mVorbisFile);
 }
 
 // Создание источника звука из wav-файла.
-reference<Ogg> Ogg::create( const char * path )
+reference<ogg> ogg::create( const char * path )
 {
-    return reference<Ogg>(new Ogg(path));
+    return reference<ogg>(new ogg(path));
 }

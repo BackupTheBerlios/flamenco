@@ -12,12 +12,12 @@ namespace flamenco
 {
 
 // Эффект для изменения громкости и панорамирования.
-class VolumePan : public Effect
+class volume_pan : public effect
 {
 public:
     // Создание нового эффекта. Громкость задается числом от 0 до 1,
     // панорама - от -1 до 1.
-    static reference<VolumePan> create( reference<Pin> input, f32 volume, f32 pan );
+    static reference<volume_pan> create( reference<pin> input, f32 volume, f32 pan );
     
     
     // Громкость в диапазоне от 0 до 1.
@@ -32,7 +32,7 @@ public:
     
     
 private:
-    VolumePan( reference<Pin> input, f32 volume, f32 pan );
+    volume_pan( reference<pin> input, f32 volume, f32 pan );
     
     // Заполняет буферы каналов звуковыми данными.
     void process( f32 * left, f32 * right );

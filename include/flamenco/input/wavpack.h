@@ -15,20 +15,20 @@ namespace flamenco
 
 
 // Источник звука из wv-файла.
-class WavPack : public Pin
+class wavpack : public pin
 {
 public:
-    ~WavPack();
+    ~wavpack();
 
     // Создание источника звука.
-    static reference<WavPack> create( const char * path );
+    static reference<wavpack> create( const char * path );
 
     // Флаг зацикленности звука.
     atomic<bool> looping;
 
 
 private:
-    WavPack( const char * path );
+    wavpack( const char * path );
 
     // Помещает данные из буфера в левый и правый каналы
     void process( f32 * left, f32 * right );

@@ -9,7 +9,7 @@
 using namespace flamenco;
 
 // Создает эффект и присоединяет к нему входной пин.
-Effect::Effect( reference<Pin> input )
+effect::effect( reference<pin> input )
 {
     assert(!input->connected());
     mInput = input;
@@ -17,7 +17,7 @@ Effect::Effect( reference<Pin> input )
 }
 
 // Деструктор.
-Effect::~Effect()
+effect::~effect()
 {
     assert(mInput->connected());
     mInput->setConnected(false);

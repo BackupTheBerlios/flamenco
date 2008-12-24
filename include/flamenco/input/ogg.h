@@ -17,20 +17,20 @@ namespace flamenco
 {
 
 // Источник звука из ogg-vorbis-файла.
-class Ogg : public Pin
+class ogg : public pin
 {
 public:
-    ~Ogg();
+    ~ogg();
     
     // Создание источника звука.
-    static reference<Ogg> create( const char * path );
+    static reference<ogg> create( const char * path );
     
     // Флаг зацикленности звука.
     atomic<bool> looping;
     
     
 private:
-    Ogg( const char * path );
+    ogg( const char * path );
     
     // Помещает данные из буфера в левый и правый каналы.
     void process( f32 * left, f32 * right );

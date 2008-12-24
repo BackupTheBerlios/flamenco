@@ -14,20 +14,20 @@ namespace flamenco
 {
 
 // Источник звука из wav-файла.
-class Wav : public Pin
+class wav : public pin
 {
 public:
-    ~Wav();
+    ~wav();
     
     // Создание источника звука.
-    static reference<Wav> create( const char * path );
+    static reference<wav> create( const char * path );
     
     // Флаг зацикленности звука.
     atomic<bool> looping;
     
     
 private:
-    Wav( const char * path );
+    wav( const char * path );
     
     // Помещает данные из буфера в левый и правый каналы.
     void process( f32 * left, f32 * right );

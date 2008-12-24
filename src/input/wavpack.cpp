@@ -9,12 +9,12 @@
 using namespace flamenco;
 
 // Волшебное значение для проверки выхода за границы буферов.
-const s32 WavPack::MAGIC = 0x900d;
+const s32 wavpack::MAGIC = 0x900d;
 // Максимальный размер буфера в семплах
-const u32 WavPack::BUFFER_SIZE_IN_SAMPLES = 1 << 16;
+const u32 wavpack::BUFFER_SIZE_IN_SAMPLES = 1 << 16;
 
 // Создание источника звука из wv-файла.
-WavPack::WavPack( const char * path )
+wavpack::wavpack( const char * path )
     : mSamples(NULL), mSamplesCount(0), mSamplesCurrent(0),
       mChannels(0), looping(false), mIsFinished(false)
 {
@@ -42,13 +42,13 @@ WavPack::WavPack( const char * path )
 }
 
 // Распаковка одной порции данных в буфер
-u32 WavPack::unpack(s32 * dst, u32 offset, u32 size)
+u32 wavpack::unpack(s32 * dst, u32 offset, u32 size)
 {
     return WavpackUnpackSamples(mInput, reinterpret_cast<int32_t*>(dst + offset), (size - offset) / mChannels) * mChannels;
 }
 
 // Читаем из файла в буфер в зависимости от флага looping
-void WavPack::fill(bool looping)
+void wavpack::fill(bool looping)
 {
     // Пытаемся заполнить весь буфер за раз
     mSamplesCount = unpack(mSamples, 0, BUFFER_SIZE_IN_SAMPLES);
@@ -71,7 +71,7 @@ void WavPack::fill(bool looping)
 };
 
 // Заполняем левый и правый каналы из внутреннего буфера.
-void WavPack::process( f32 * left, f32 * right )
+void wavpack::process( f32 * left, f32 * right )
 {   
     bool looping = this->looping();
 
@@ -99,14 +99,14 @@ void WavPack::process( f32 * left, f32 * right )
 }
 
 // Деструктор
-WavPack::~WavPack()
+wavpack::~wavpack()
 {
     delete [] mSamples;
     WavpackCloseFile(mInput);
 }
 
 // Создание источника звука из wv-файла.
-reference<WavPack> WavPack::create( const char * path )
+reference<wavpack> wavpack::create( const char * path )
 {
-    return reference<WavPack>(new WavPack(path));
+    return reference<wavpack>(new wavpack(path));
 }

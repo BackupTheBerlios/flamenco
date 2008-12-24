@@ -12,17 +12,16 @@ namespace flamenco
 {
 
 // Пин (элемент цепочки звуковых фильтров).
-class Pin : public refcountable
+class pin : public refcountable
 {
 protected:
-    Pin();
-    virtual ~Pin() = 0;
-    friend class reference<Pin>;
+    pin();
+    virtual ~pin() = 0;
+    friend class reference<pin>;
     
     // Заполняет буферы каналов звуковыми данными.
     // Размер каждого буфера - CHANNEL_BUFFER_SIZE_IN_SAMPLES семплов.
     virtual void process( f32 * left, f32 * right ) = 0;
-    friend class Mixer;
     
     // Присоединен ли пин к другому пину или микшеру.
     inline bool connected() const
@@ -38,8 +37,8 @@ private:
     {
         mIsConnected = connected;
     }
-    friend class Effect;
-    friend class Mixer;
+    friend class effect;
+    friend class mixer;
 };
 
 } // namespace flamenco

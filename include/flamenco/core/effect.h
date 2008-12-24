@@ -12,12 +12,12 @@ namespace flamenco
 {
 
 // Эффект - пин, обрабатывающий данные другого пина.
-class Effect : public Pin
+class effect : public pin
 {
 protected:
     // Создает эффект и присоединяет к нему входной пин.
-    Effect( reference<Pin> input );
-    ~Effect();
+    effect( reference<pin> input );
+    ~effect();
     
     // Обычно вызывает mInputPin.process() и обрабатывает
     // заполненные им буферы. Но может и заполнять их самостоятельно.
@@ -31,7 +31,7 @@ protected:
     
 private:
     // Входной пин.
-    reference<Pin> mInput;
+    reference<pin> mInput;
 };
 
 } // namespace flamenco

@@ -9,13 +9,13 @@
 using namespace flamenco;
 
 // Конструктор.
-Pin::Pin()
+pin::pin()
     : mIsConnected(false)
 {
 }
 
 // Деструктор.
-Pin::~Pin()
+pin::~pin()
 {
     assert(!mIsConnected);
 }

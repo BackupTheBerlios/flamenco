@@ -14,17 +14,17 @@ namespace flamenco
 {
 
 // Микшер.
-class Mixer : noncopyable
+class mixer : noncopyable
 {
 public:
     // Получение ссылки на единственную копию микшера.
-    static Mixer & singleton();
+    static mixer & singleton();
     
     
     // Присоединение пина. assert(!pin.connected()).
-    void attach( reference<Pin> pin );
+    void attach( reference<pin> pin );
     // Отсоединение пина. Если он не присоединен, warning в лог.
-    void detach( reference<Pin> pin );
+    void detach( reference<pin> pin );
     
     // Заполняет буфер смикшированными данными. Формат буфера - PCM 44100 16bit interleaved stereo.
     // Размер буфера фиксирован - равен MIXER_BUFFER_SIZE_IN_SAMPLES семплам.
@@ -33,7 +33,7 @@ public:
     // внутренних буферов. Затем смешивает получившиеся данные в итоговый буфер.
     //
     // Пара слов о реализации: внутри микшера должно быть 2 буфера - по одному на канал для передачи
-    // в Pin::process. В таком случае после получения данных пина они должны быть примешаны к итоговому
+    // в pin::process. В таком случае после получения данных пина они должны быть примешаны к итоговому
     // буферу. (Возможно, это будет медленно, тогда нужно будет еще 2 буфера для смешивания отдельно каналов,
     // а затем уже их копировать с чередованием в переданный буфер).
     // Для проверки выхода за границы массива хорошо делать внутренние буферы чуть больше, чем нужно
@@ -47,7 +47,7 @@ private:
     // Критическая секция.
     static critical_section mCriticalSection;
     // Список подключенных пинов.
-    typedef std::vector<reference<Pin> > PinList;
+    typedef std::vector<reference<pin> > PinList;
     PinList mPins;
     // Буферы для левого и правого каналов.
     // На 1 больше для проверки выхода за границы.
@@ -56,8 +56,8 @@ private:
     // Волшебное значение для проверки выхода за границы буферов.
     static const f32 MAGIC;
     
-    Mixer();
-    ~Mixer();
+    mixer();
+    ~mixer();
 };
 
 } // namespace flamenco

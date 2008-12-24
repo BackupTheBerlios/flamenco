@@ -11,13 +11,13 @@
 using namespace flamenco;
 
 // Конструктор.
-Sine::Sine( u32 frequency )
+sine::sine( u32 frequency )
     : frequency(frequency), mTimeShift(0)
 {
 }
 
 // Заполнение буфера гармоническим звуком.
-void Sine::process( f32 * left, f32 * right )
+void sine::process( f32 * left, f32 * right )
 {
     u32 frequency = this->frequency();
     for (u32 i = 0; i < CHANNEL_BUFFER_SIZE_IN_SAMPLES; ++i)
@@ -29,14 +29,14 @@ void Sine::process( f32 * left, f32 * right )
 }
 
 // Создание нового источника гармонического звука с частотой frequency Гц.
-reference<Sine> Sine::create( u32 frequency )
+reference<sine> sine::create( u32 frequency )
 {
-    return reference<Sine>(new Sine(frequency));
+    return reference<sine>(new sine(frequency));
 }
 
 
 // Заполнение каналов случайными числами.
-void Noise::process( f32 * left, f32 * right )
+void noise::process( f32 * left, f32 * right )
 {
     for (u32 i = 0; i < CHANNEL_BUFFER_SIZE_IN_SAMPLES; ++i)
     {
@@ -46,7 +46,7 @@ void Noise::process( f32 * left, f32 * right )
 }
 
 // Создание источника шума
-reference<Noise> Noise::create()
+reference<noise> noise::create()
 {
-    return reference<Noise>(new Noise());
+    return reference<noise>(new noise());
 }

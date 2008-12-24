@@ -74,12 +74,12 @@ int main()
     
     
     // Инициализация flamenco.
-    reference<Pin> sine = Sine::create(400);
-    reference<Ogg> wave = Ogg::create("input.ogg");
-    reference<Pin> noise = Noise::create();
+    reference<pin> sine = sine::create(400);
+    reference<ogg> wave = ogg::create("input.ogg");
+    reference<pin> noise = noise::create();
     
-    reference<VolumePan> vp = VolumePan::create(wave, 1.0f, 0.0f);
-    Mixer & mixer = Mixer::singleton();
+    reference<volume_pan> vp = volume_pan::create(wave, 1.0f, 0.0f);
+    mixer & mixer = mixer::singleton();
     //mixer.attach(sine);
     mixer.attach(vp);
     //mixer.attach(noise);

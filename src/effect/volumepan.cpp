@@ -20,21 +20,21 @@ inline f32 clamp_0_1( f32 value )
 }
 
 // Создание нового эффекта.
-reference<VolumePan> VolumePan::create( reference<Pin> input, f32 volume, f32 pan )
+reference<volume_pan> volume_pan::create( reference<pin> input, f32 volume, f32 pan )
 {
-    return reference<VolumePan>(new VolumePan(input, volume, pan));
+    return reference<volume_pan>(new volume_pan(input, volume, pan));
 }
 
 // Конструктор.
-VolumePan::VolumePan( reference<Pin> input, f32 volume, f32 pan )
-    : Effect(input), volume(volume), pan(pan)
+volume_pan::volume_pan( reference<pin> input, f32 volume, f32 pan )
+    : effect(input), volume(volume), pan(pan)
 {
     assert(0.0f <= volume && volume <= 1.0f);
     assert(-1.0f <= pan && pan <= 1.0f);
 }
 
 // Заполняет буферы каналов звуковыми данными.
-void VolumePan::process( f32 * left, f32 * right )
+void volume_pan::process( f32 * left, f32 * right )
 {
     f32 volume = clamp_0_1(this->volume()), pan = this->pan();
     f32 volumeLeft  = volume * clamp_0_1(1.0f - pan),

@@ -12,18 +12,18 @@ namespace flamenco
 {
 
 // Источник гармонического звука.
-class Sine : public Pin
+class sine : public pin
 {
 public:
     // Создание нового источника гармонического звука с частотой frequency Гц.
-    static reference<Sine> create( u32 frequency );
+    static reference<sine> create( u32 frequency );
     
     
     // Частота синусоиды.
     atomic<u32> frequency;
     
 private:
-    Sine( u32 frequency );
+    sine( u32 frequency );
     
     // Заполняет буферы каналов звуковыми данными.
     void process( f32 * left, f32 * right );
@@ -36,14 +36,14 @@ private:
 };
 
 // Источник белого шума.
-class Noise : public Pin
+class noise : public pin
 {
 public:
     // Создание источника белого шума.
-    static reference<Noise> create();
+    static reference<noise> create();
     
 private:
-    Noise() {}
+    noise() {}
     
     // Заполняет буферы каналов случайными значениями.
     void process( f32 * left, f32 * right );

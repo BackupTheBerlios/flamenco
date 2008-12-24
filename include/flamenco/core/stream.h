@@ -14,7 +14,7 @@ namespace flamenco
 // Базовый класс для звуковых потоков.
 // Нужен для того, чтобы к потокам разных типов можно было обращаться
 // по общему интерфейсу.
-class sound_stream_base : public Pin
+class sound_stream_base : public pin
 {
 public:
     // Флаг зацикленности звука.
@@ -72,7 +72,7 @@ protected:
 
 // Источник звуковых данных из файлов различных форматов.
 template <class decoderT>
-class stream : public Pin
+class stream : public pin
 {
 public:
     // Параметры декодера.

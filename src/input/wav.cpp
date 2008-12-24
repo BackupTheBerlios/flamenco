@@ -9,12 +9,12 @@
 using namespace flamenco;
 
 // Волшебное значение для проверки выхода за границы буферов.
-const s16 Wav::MAGIC = 0x900dU;
+const s16 wav::MAGIC = 0x900dU;
 // Максимальный размер буфера в семплах
-const u32 Wav::BUFFER_SIZE_IN_SAMPLES = 1 << 16;
+const u32 wav::BUFFER_SIZE_IN_SAMPLES = 1 << 16;
 
 // Создание источника звука из wav-файла.
-Wav::Wav( const char * path )
+wav::wav( const char * path )
     : mSamples(NULL), mSampleCount(0), mSamplesCurrent(0),
       mChannels(0), looping(false), mInputOffset(0), mIsFinished(false)
 {
@@ -79,13 +79,13 @@ Wav::Wav( const char * path )
     //static_cast<u32>(fread(mSamples, sizeof(s16), BUFFER_SIZE_IN_SAMPLES, mInput));
 }
 
-u32 Wav::unpack(s16 * dst, u32 offset, u32 size)
+u32 wav::unpack(s16 * dst, u32 offset, u32 size)
 {
     return static_cast<u32>(fread(dst + offset, sizeof(s16), size - offset, mInput));
 }
 
 // Читаем из файла в буфер в зависимости от флага looping
-void Wav::fill(bool looping)
+void wav::fill(bool looping)
 {
     // Пытаемся заполнить весь буфер за раз
     mSampleCount = unpack(mSamples, 0, BUFFER_SIZE_IN_SAMPLES);
@@ -109,7 +109,7 @@ void Wav::fill(bool looping)
 };
 
 // Заполняем левый и правый каналы из внутреннего буфера.
-void Wav::process( f32 * left, f32 * right )
+void wav::process( f32 * left, f32 * right )
 {   
     bool looping = this->looping();
 
@@ -136,14 +136,14 @@ void Wav::process( f32 * left, f32 * right )
 }
 
 // Деструктор
-Wav::~Wav()
+wav::~wav()
 {
     delete [] mSamples;
     fclose(mInput);
 }
 
 // Создание источника звука из wav-файла.
-reference<Wav> Wav::create( const char * path )
+reference<wav> wav::create( const char * path )
 {
-    return reference<Wav>(new Wav(path));
+    return reference<wav>(new wav(path));
 }
