@@ -8,155 +8,139 @@
 
 using namespace flamenco;
 
-// Волшебное значение для проверки выхода за границы буферов.
-const s16 ogg::MAGIC = 0x900dU;
-// Максимальный размер буфера в семплах
-const u32 ogg::BUFFER_SIZE_IN_SAMPLES = 1 << 16;
-
-namespace
+namespace 
 {
-// Вспомогательные методы для чтения файла
+
+// Вспомогательные методы для чтения файла.
 size_t read_func(void * ptr, size_t size, size_t count, void *datasource)
 {
-	FILE * f = reinterpret_cast<FILE *>(datasource);
-	return fread(static_cast<char *>(ptr), size, count, f);
+    source * input = reinterpret_cast<source *>(datasource);
+    return input->read(static_cast<void *>(ptr), size, count);
 }
 
 int seek_func(void * datasource, ogg_int64_t offset, int whence)
 {
-	FILE * f = reinterpret_cast<FILE *>(datasource);
-	return fseek(f, static_cast<long>(offset), whence) == 0 ? 0 : -1;
+    source * input = reinterpret_cast<source *>(datasource);
+    input->seek(static_cast<s32>(offset), whence);
+    return 0;
 }
 
 long tell_func(void * datasource)
 {
-	FILE * f = reinterpret_cast<FILE *>(datasource);
-	return ftell(f);
+    source * input = reinterpret_cast<source *>(datasource);
+    return input->tell();
 }
 
-int close_func(void *datasource)
+int close_func(void *)
 {
-	FILE * f = reinterpret_cast<FILE *>(datasource);
-	fclose(f);
-	return 0;
+    return 0;
+}
+
 }
 
 
-};
-
-// Создание источника звука из wav-файла.
-ogg::ogg( const char * path )
-    : mSamples(NULL), mSampleCount(0), mSamplesCurrent(0),
-      mChannels(0), looping(false), mIsFinished(false)
+// Конструктор
+ogg_decoder::ogg_decoder( std::auto_ptr<source> source )
+    : mSource(source), mSampleRate(0), mSampleCount(0),
+      mChannelCount(0), mBuffer(NULL), mBufferSize(0),
+      mBufferRealSize(0), mBufferOffset(0)
 {
-	ov_callbacks cb;
+    assert(mSource.get());
 
-	cb.close_func = close_func;
-	cb.read_func  = read_func;
-	cb.seek_func  = seek_func;
-	cb.tell_func  = tell_func;
+    // Структура для чтения данных
+    ov_callbacks cb;
 
-	if (NULL == (mInput = fopen(path, "rb")))
-		throw std::runtime_error("Can`t open file");
+    // Заполняем структуру
+    cb.close_func = close_func;
+    cb.read_func  = read_func;
+    cb.seek_func  = seek_func;
+    cb.tell_func  = tell_func;
 
-	mVorbisFile = new OggVorbis_File;
+    // Создаем и открываем vorbis поток
+    mVorbisFile = new OggVorbis_File;
+    if (ov_open_callbacks(mSource.get(), mVorbisFile, NULL, -1, cb) < 0)
+        throw std::runtime_error("File is not a valid ogg container.");
 
-	if (ov_open_callbacks(mInput, mVorbisFile, NULL, -1, cb) < 0)
-		throw std::runtime_error("Can't open file");
+    // Информация о потоке vorbis.
+    mVorbisInfo = ov_info(mVorbisFile, -1);
 
-	mVorbisInfo = ov_info(mVorbisFile, -1);
+    // Количество каналов.
+    mChannelCount = mVorbisInfo->channels;
+    assert(mChannelCount != 0);
+    if (mChannelCount > 2)
+        throw std::runtime_error("Expected mono or stereo stream.");
 
-	mChannels  = mVorbisInfo->channels;
-	if (mChannels != 1 && mChannels != 2)
-		throw std::runtime_error("Too many channels in wav-file");
+    // Частота.
+    mSampleRate = mVorbisInfo->rate;
 
-	mFrequency = mVorbisInfo->rate;
+    // Общее количество семплов
+    mSampleCount = static_cast<u32>(ov_pcm_total(mVorbisFile, -1)) / mChannelCount;
 
-	// Создаем буфер для чтения файла
-	mSamples = new s16[BUFFER_SIZE_IN_SAMPLES + 1];
-	mSamples[BUFFER_SIZE_IN_SAMPLES] = MAGIC;
-    mSampleCount = unpack(mSamples, 0, BUFFER_SIZE_IN_SAMPLES);
+    // Размер буфера определяется экспериментальным путем
+	mBufferSize = mSampleCount * 2;
+	mBufferSize = mSampleCount > CHANNEL_BUFFER_SIZE_IN_SAMPLES * (1000 / LATENCY_MSEC) ? CHANNEL_BUFFER_SIZE_IN_SAMPLES : mSampleCount;
 
-	// Проверка выхода за пределы массива
-	assert(MAGIC == mSamples[BUFFER_SIZE_IN_SAMPLES]);
+	// Магическое домножение
+	mBufferSize *= 2 * mChannelCount;
+
+    mBuffer = new s16[mBufferSize];
+    mBufferRealSize = unpack_vorbis(mBuffer, 0, mBufferSize);
 }
 
-// Распаковка одной порции данных в буфер
-u32 ogg::unpack(s16 * dst, u32 offset, u32 size)
+void ogg_decoder::seek( u32 sample )
 {
-    int current_section;
+    ov_pcm_seek(mVorbisFile, sample * mChannelCount);
+    // Сбрасываем указатель на текущий семпл
+    mBufferOffset = 0;
+    // Обнуляем буфер
+    mBufferRealSize = 0;
+}
 
-    while (offset < size)
+// Распаковывает из vorbis потока count семплов во внутренний буфер начиная со смещения offset 
+// Возвращает количество прочитанных семплов
+u32 ogg_decoder::unpack_vorbis(s16 * dst, u32 offset, u32 count)
+{
+	int currentSection;
+	const u32 ORIGINAL_OFFSET = offset;
+
+    while (offset < count)
+    {
+        int result = ov_read(mVorbisFile, reinterpret_cast<char *>(dst + offset / sizeof(s16)), (count - offset) , 0, sizeof(s16), 1, &currentSection);
+        if (result == 0)
+            break;
+        else if (result > 0)
+			offset += result;
+    }
+    return (offset - ORIGINAL_OFFSET) / sizeof(s16);
+}
+
+// Копирует в левый и правый каналы count декодированных семплов.
+u32 ogg_decoder::unpack( f32 * left, f32 * right, u32 count )
+{
+    u32 samplesCount = 0; 
+    s16 * ptr = mBuffer + mBufferOffset;
+
+	for (u32 i = 0; i < CHANNEL_BUFFER_SIZE_IN_SAMPLES; ++i)
 	{
-		int result = ov_read(mVorbisFile, reinterpret_cast<char *>(dst + offset / 2), (size - offset) , 0, 2, 1, &current_section);
-		if (result == 0)
+		if (mBufferOffset >= mBufferRealSize)
+		{
+			// Пытаемся подгрузить еще данных в буфер
+			mBufferOffset = 0;
+			ptr = mBuffer;
+			if (0 == (mBufferRealSize = unpack_vorbis(mBuffer, 0, mBufferSize)))
+				break;
+		}
+		f32 sample = *left++ = *ptr++ / static_cast<f32>(1 << 15);
+		*right++ = (mChannelCount == 1) ? sample : *ptr++ / static_cast<f32>(1 << 15);
+		mBufferOffset += mChannelCount;
+		if (++samplesCount == count)
 			break;
-		else if (result > 0)
-            offset += result;
 	}
-    return offset;
-};
-
-// Читаем из файла в буфер в зависимости от флага looping
-void ogg::fill(bool looping)
-{
-    // Пытаемся заполнить весь буфер за раз
-	mSampleCount = unpack(mSamples, 0, BUFFER_SIZE_IN_SAMPLES);
-
-    if (looping)
-    {
-        // Цикл необходим для чтения файлов, размер которых меньше буфера
-        while (mSampleCount < BUFFER_SIZE_IN_SAMPLES)
-        {
-            // Переходим на начало данных в файле
-			ov_pcm_seek(mVorbisFile, 0);
-            // Читаем очередную порцию
-            mSampleCount += unpack(mSamples, mSampleCount, BUFFER_SIZE_IN_SAMPLES);
-        }
-    }
-    mIsFinished = (mSampleCount < BUFFER_SIZE_IN_SAMPLES && !looping);
-
-    // Проверка выхода за пределы массива
-    assert(MAGIC == mSamples[BUFFER_SIZE_IN_SAMPLES]);
-};
-
-// Заполняем левый и правый каналы из внутреннего буфера.
-void ogg::process( f32 * left, f32 * right )
-{
-    bool looping = this->looping();
-
-    if (!looping && mIsFinished)
-        return;
-
-    const s16 * ptr = mSamples + mSamplesCurrent;
-
-    for (u32 i = 0; i < CHANNEL_BUFFER_SIZE_IN_SAMPLES; ++i)
-    {
-        // Если буфер подошел к концу
-        if (mSamplesCurrent >= mSampleCount / 2)
-        {
-            // Начинаем сначала
-            mSamplesCurrent = 0;
-            ptr = mSamples;
-            // Заполняем внутренний буфер
-            fill(looping);
-        }
-        f32 sample = *left++ = *ptr++ / static_cast<f32>(1 << 16);
-        *right++ = (mChannels == 1) ? sample : *ptr++ / static_cast<f32>(1 << 16);
-        mSamplesCurrent += mChannels;
-    }
-
+    return samplesCount;
 }
 
-// Деструктор
-ogg::~ogg()
+ogg_decoder::~ogg_decoder()
 {
-    delete [] mSamples;
-	ov_clear(mVorbisFile);
-}
-
-// Создание источника звука из wav-файла.
-reference<ogg> ogg::create( const char * path )
-{
-    return reference<ogg>(new ogg(path));
+    ov_clear(mVorbisFile);
+    delete [] mBuffer;
 }
