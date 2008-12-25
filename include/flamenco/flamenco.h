@@ -20,6 +20,7 @@
 
 // Источники звука.
 #include <flamenco/input/procedural.h>
+#include <flamenco/input/file.h>
 #include <flamenco/input/wav.h>
 #include <flamenco/input/wavpack.h>
 #include <flamenco/input/ogg.h>

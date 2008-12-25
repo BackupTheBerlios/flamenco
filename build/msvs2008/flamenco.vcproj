@@ -130,6 +130,14 @@
 				Name="input"
 				>
 				<File
+					RelativePath="..\..\src\input\file.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\flamenco\input\file.h"
+					>
+				</File>
+				<File
 					RelativePath="..\..\src\input\ogg.cpp"
 					>
 				</File>
