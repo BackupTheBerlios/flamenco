@@ -5,6 +5,7 @@
  Пример использования библиотеки.
  */
 #include <flamenco/flamenco.h>
+#include <MMSystem.h>
 #include <dsound.h>
 #include <dxerr9.h>
 #include <iostream>
@@ -74,8 +75,8 @@ int main()
     
     
     // Инициализация flamenco.
-    reference<pin> sine = sine::create(400);
-    reference<ogg> wave = ogg::create("input.ogg");
+    reference<pin> wave = sine::create(400);
+    //reference<ogg> wave = ogg::create("input.ogg");
     reference<pin> noise = noise::create();
     
     reference<volume_pan> vp = volume_pan::create(wave, 1.0f, 0.0f);
@@ -129,7 +130,7 @@ int main()
                 continue;
             
             case 'l':
-                wave->looping.set(!wave->looping());
+//                wave->looping.set(!wave->looping());
                 continue;
             }
             // Если нажата любая другая клавиша - выходим.
