@@ -128,6 +128,7 @@ void stream<decoderT>::process( f32 * left, f32 * right )
     bool looping = this->looping();
     if (!looping && !playing())
         return;
+    set_playing(true);
     
     // «аполн€ем каналы данными. ≈сли скопировано меньше, чем нужно, значит поток закончилс€.
     u32 count = mDecoder.unpack(left, right, CHANNEL_BUFFER_SIZE_IN_SAMPLES);
@@ -154,6 +155,7 @@ void stream<decoderT>::process( f32 * left, f32 * right )
             set_loop_count(0);
             mDecoder.seek(0);
             set_position(0);
+            set_playing(false);
         }
     }
     else
