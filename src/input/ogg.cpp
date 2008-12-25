@@ -77,7 +77,6 @@ ogg_decoder::ogg_decoder( std::auto_ptr<source> source )
     mSampleCount = static_cast<u32>(ov_pcm_total(mVorbisFile, -1)) / mChannelCount;
 
     // Размер буфера определяется экспериментальным путем
-	mBufferSize = mSampleCount * 2;
 	mBufferSize = mSampleCount > CHANNEL_BUFFER_SIZE_IN_SAMPLES * (1000 / LATENCY_MSEC) ? CHANNEL_BUFFER_SIZE_IN_SAMPLES : mSampleCount;
 
 	// Магическое домножение
