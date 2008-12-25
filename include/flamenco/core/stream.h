@@ -56,10 +56,8 @@ protected:
  Все декодеры должны следовать одному интерфейсу:
  struct decoder
  {
-     struct initializer;
-     
      // Конструктор.
-     decoder( const initializer & );
+     decoder( std::auto_ptr<source> source );
      
      // Копирует в левый и правый каналы count декодированных семплов.
      // Возвращает количество скопированных семплов, оно может быть меньше count,
@@ -79,19 +77,16 @@ protected:
 
 // Источник звуковых данных из файлов различных форматов.
 template <class decoderT>
-class stream : public pin
+class stream : public sound_stream_base
 {
 public:
-    // Параметры декодера.
-    typedef typename decoderT::initializer initializer;
-    
     // Создание потока.
-    static reference<stream> create( const initializer & initializer );
+    static reference<stream> create( std::auto_ptr<source> source );
     
     
 private:
-    stream( const initializer & initializer )
-        : mDecoder(initializer)
+    stream( std::auto_ptr<source> source )
+        : mDecoder(source)
         {}
     
     // Заполняет буферы каналов звуковыми данными, полученными от декодера.
@@ -113,10 +108,16 @@ private:
 // Реализация.
 
 template <class decoderT>
+reference<stream<decoderT> > stream<decoderT>::create( std::auto_ptr<source> source )
+{
+    return reference<stream<decoderT> >(new stream<decoderT>(source));
+}
+
+template <class decoderT>
 void stream<decoderT>::process( f32 * left, f32 * right )
 {
     bool looping = this->looping();
-    if (!looping && !playing)
+    if (!looping && !playing())
         return;
     
     // Заполняем каналы данными. Если скопировано меньше, чем нужно, значит поток закончился.
@@ -127,15 +128,17 @@ void stream<decoderT>::process( f32 * left, f32 * right )
         if (looping)
         {
             // Заполняем буфер, читая файл снова и снова.
-            u32 loopCount = 0;
+            u32 loopCount = 0, samplesRead = 0;
             while (count < CHANNEL_BUFFER_SIZE_IN_SAMPLES)
             {
                 mDecoder.seek(0);
-                count += mDecoder.unpack(left, right, CHANNEL_BUFFER_SIZE_IN_SAMPLES - count);
+                samplesRead = mDecoder.unpack(left, right, CHANNEL_BUFFER_SIZE_IN_SAMPLES - count);
+                count += samplesRead;
                 loopCount++;
             }
+            assert(count == CHANNEL_BUFFER_SIZE_IN_SAMPLES);
             set_loop_count(loop_count() + loopCount);
-            set_position(CHANNEL_BUFFER_SIZE_IN_SAMPLES % mDecoder.length());
+            set_position(samplesRead);
         }
         else // Файл доиграл до конца, выставляем флаги.
         {
@@ -145,8 +148,10 @@ void stream<decoderT>::process( f32 * left, f32 * right )
         }
     }
     else
+    {
+        assert(count == CHANNEL_BUFFER_SIZE_IN_SAMPLES);
         set_position(position() + CHANNEL_BUFFER_SIZE_IN_SAMPLES);
-    assert(count == CHANNEL_BUFFER_SIZE_IN_SAMPLES);
+    }
 }
 
 } // namespace flamenco

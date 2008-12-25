@@ -5,145 +5,119 @@
  Реализация источника звука из wav-файла.
  */
 #include <flamenco/flamenco.h>
+#pragma warning(disable:4201) // Отключение предупреждения о nameless struct.
+#include <mmsystem.h>
 
 using namespace flamenco;
 
-// Волшебное значение для проверки выхода за границы буферов.
-const s16 wav::MAGIC = 0x900dU;
-// Максимальный размер буфера в семплах
-const u32 wav::BUFFER_SIZE_IN_SAMPLES = 1 << 16;
-
-// Создание источника звука из wav-файла.
-wav::wav( const char * path )
-    : mSamples(NULL), mSampleCount(0), mSamplesCurrent(0),
-      mChannels(0), looping(false), mInputOffset(0), mIsFinished(false)
+namespace
 {
-    if (NULL == (mInput = fopen(path, "rb")))
-        throw std::runtime_error("Can`t open file");
-    
-    // Получаем общий размер файла.
-    fseek(mInput, 0, SEEK_END);
-    u32 inputSize = ftell(mInput);
-    fseek(mInput, 0, SEEK_SET);
 
-    // Буфер для заголовка
-    u8 headerBuffer[256];
-    memset(headerBuffer, 0, sizeof(headerBuffer));
+// Поддерживается ли частота файла библиотекой.
+bool frequency_is_supported( u32 freq )
+{
+    return freq == 44100 || freq == 32000 || freq == 22050;
+}
 
-    // Считываем заголовок.
-    mInputOffset = static_cast<u32>(fread(headerBuffer, 1, sizeof(headerBuffer), mInput));
-    assert(mInputOffset == sizeof(headerBuffer));
-    
-    // Проверка правильности файла.
-    u32 * ptr = reinterpret_cast<u32 *>(headerBuffer);
-    if (*ptr != 'FFIR' /* "RIFF" */)
-        throw std::runtime_error("Missing RIFF signature");
-    if (*(ptr + 2) != 'EVAW' /* "WAVE" */)
-        throw std::runtime_error("Missing WAVE header");
-    ptr += 3;
-    if (*ptr != ' tmf' /* "fmt " */)
-        throw std::runtime_error("Missing 'fmt' block");
-    if (*(u16 *)(ptr + 2) != 1 /* PCM (uncompressed) */)
-        throw std::runtime_error("Compression is not supported");
-    if (*((u16 *)(ptr) + 11) != 16 /* 16 bit per sample */)
-        throw std::runtime_error("Only 16 bit per sample format is supported");
-    
-    // Получаем количество каналов.
-    mChannels = *((u16 *)(ptr) + 5);
-    if (mChannels != 1 && mChannels != 2)
-        throw std::runtime_error("Too many channels in wav-file");
-    mFrequency = *((u16 *)(ptr) + 6);
-    
-    // Ищем секцию 'data'.
-    mInputOffset = 20 + *(ptr + 1);
-    assert(mInputOffset < inputSize);
+} // namespace
 
-    fseek(mInput, mInputOffset, SEEK_SET);
-
-    for(;;)
+// Конструктор.
+wav_decoder::wav_decoder( std::auto_ptr<source> source )
+    : mSource(source), mDataOffset(0), mSampleRate(0),
+      mSampleCount(0), mChannelCount(0), mChannelBuffer(NULL)
+{
+    assert(mSource.get());
+    
+    // Проверяем заголовок RIFF.
+    const u32 RIFF = 'FFIR',
+              WAVE = 'EVAW';
+    u32 chunkId;
+    mSource->read(&chunkId, sizeof(u32), 1);
+    if (chunkId != RIFF)
+        throw std::runtime_error("File is not a valid RIFF container.");
+    mSource->seek(4, SEEK_CUR);
+    mSource->read(&chunkId, sizeof(u32), 1);
+    if (chunkId != WAVE)
+        throw std::runtime_error("File is not a valid WAVE container.");
+    
+    // Читаем настройки.
+    const u32 FMT = ' tmf';
+    mSource->read(&chunkId, sizeof(u32), 1);
+    if (chunkId != FMT)
+        throw std::runtime_error("Missing 'fmt ' section after RIFF header.");
+    u32 chunkSize;
+    mSource->read(&chunkSize, sizeof(u32), 1);
+    WAVEFORMATEX format;
+    mSource->read(&format, sizeof(WAVEFORMATEX), 1);
+    
+    // Проверяем правильность формата.
+    if (format.wFormatTag != WAVE_FORMAT_PCM)
+        throw std::runtime_error("Compressed wave files are not supported.");
+    if (format.wBitsPerSample != 16)
+        throw std::runtime_error("Unsupported sample format (expected 16 bits).");
+    mSampleRate = format.nSamplesPerSec;
+    if (!frequency_is_supported(mSampleRate))
+        throw std::runtime_error("Unsupported sample rate.");
+    mChannelCount = format.nChannels;
+    assert(0 != mChannelCount);
+    if (mChannelCount > 2)
+        throw std::runtime_error("Expected mono or stereo stream.");
+    // Создаем буфер для преобразования семплов.
+    mChannelBuffer = new s16[CHANNEL_BUFFER_SIZE_IN_SAMPLES * mChannelCount];
+    
+    // Перематываем на начало следующего чанка и ищем секцию 'data'.
+    const u32 DATA = 'atad';
+    mSource->seek(chunkSize - sizeof(WAVEFORMATEX), SEEK_CUR);
+    for (;;)
     {
-        assert(mInputOffset < inputSize);
-        u32 p = '    ';
-        mInputOffset += static_cast<u32>(fread(&p, 1, sizeof(p), mInput));
-        if (p == 'atad' /* "data" */) 
+        if (mSource->read(&chunkId, sizeof(u32), 1) != 1)
+            throw std::runtime_error("EOF while looking for 'data' section.");
+        mSource->read(&chunkSize, sizeof(u32), 1);
+        if (chunkId == DATA)
             break;
+        mSource->seek(chunkSize, SEEK_CUR);
     }
-
-    mInputOffset += 4;
-    fseek(mInput, mInputOffset, SEEK_SET);
-
-    // Создаем буфер для чтения файла
-    mSamples = new s16[BUFFER_SIZE_IN_SAMPLES + 1];
-    mSamples[BUFFER_SIZE_IN_SAMPLES] = MAGIC;
-    mSampleCount = unpack(mSamples, 0, BUFFER_SIZE_IN_SAMPLES);
-    //static_cast<u32>(fread(mSamples, sizeof(s16), BUFFER_SIZE_IN_SAMPLES, mInput));
+    
+    // Секция найдена, в chunkSize ее размер.
+    mSampleCount = chunkSize / (sizeof(s16) * mChannelCount);
+    mDataOffset = mSource->tell();
 }
 
-u32 wav::unpack(s16 * dst, u32 offset, u32 size)
+// Деструктор.
+wav_decoder::~wav_decoder()
 {
-    return static_cast<u32>(fread(dst + offset, sizeof(s16), size - offset, mInput));
+    delete [] mChannelBuffer;
 }
 
-// Читаем из файла в буфер в зависимости от флага looping
-void wav::fill(bool looping)
+// Копирует в левый и правый каналы count декодированных семплов.
+u32 wav_decoder::unpack( f32 * left, f32 * right, u32 count )
 {
-    // Пытаемся заполнить весь буфер за раз
-    mSampleCount = unpack(mSamples, 0, BUFFER_SIZE_IN_SAMPLES);
-
-    if (looping)
+    // Количество семплов, которые можно считать.
+    const u32 PORTION_SIZE = sizeof(s16) * mChannelCount,
+              READ_COUNT = std::min(count, mSampleCount - (mSource->tell() - mDataOffset) / PORTION_SIZE);
+    u32 samplesRead = mSource->read(mChannelBuffer, PORTION_SIZE, READ_COUNT);
+    assert(samplesRead == READ_COUNT);
+    
+    // Моно.
+    if (mChannelCount == 1)
     {
-        // Цикл необходим для чтения файлов, размер которых меньше буфера
-        while (mSampleCount < BUFFER_SIZE_IN_SAMPLES)
+        for (u32 i = 0; i < CHANNEL_BUFFER_SIZE_IN_SAMPLES; ++i)
+            *left++ = *right++ = static_cast<f32>(mChannelBuffer[i]) / (1 << 15);
+    }
+    else // Стерео.
+    {
+        for (u32 i = 0; i < CHANNEL_BUFFER_SIZE_IN_SAMPLES; ++i)
         {
-            // Переходим на начало данных в файле
-            fseek(mInput, mInputOffset, SEEK_SET);
-            // Читаем очередную порцию
-            mSampleCount += unpack(mSamples, mSampleCount, BUFFER_SIZE_IN_SAMPLES);
-            //mSampleCount += static_cast<u32>(fread(mSamples + mSampleCount, sizeof(s16), BUFFER_SIZE_IN_SAMPLES - mSampleCount, mInput));
+            *left++  = static_cast<f32>(mChannelBuffer[(i << 1)])     / (1 << 15);
+            *right++ = static_cast<f32>(mChannelBuffer[(i << 1) + 1]) / (1 << 15);
         }
     }
-    mIsFinished = (mSampleCount < BUFFER_SIZE_IN_SAMPLES && !looping);
-
-    // Проверка выхода за пределы массива
-    assert(MAGIC == mSamples[BUFFER_SIZE_IN_SAMPLES]);
-};
-
-// Заполняем левый и правый каналы из внутреннего буфера.
-void wav::process( f32 * left, f32 * right )
-{   
-    bool looping = this->looping();
-
-    if (!looping && mIsFinished)
-        return;
-
-    const s16 * ptr = mSamples + mSamplesCurrent;
-
-    for (u32 i = 0; i < CHANNEL_BUFFER_SIZE_IN_SAMPLES; ++i)
-    {
-        // Если буфер подошел к концу
-        if (mSamplesCurrent >= mSampleCount)
-        {
-            // Начинаем сначала
-            mSamplesCurrent = 0;
-            ptr = mSamples;
-            // Заполняем внутренний буфер
-            fill(looping);
-        }
-        f32 sample = *left++ = *ptr++ / static_cast<f32>(1 << 16);
-        *right++ = (mChannels == 1) ? sample : *ptr++ / static_cast<f32>(1 << 16);
-        mSamplesCurrent += mChannels;
-    }
+    return READ_COUNT;
 }
 
-// Деструктор
-wav::~wav()
+// Установка курсора начала декодирования на заданный семпл.
+void wav_decoder::seek( u32 sample )
 {
-    delete [] mSamples;
-    fclose(mInput);
-}
-
-// Создание источника звука из wav-файла.
-reference<wav> wav::create( const char * path )
-{
-    return reference<wav>(new wav(path));
+    assert(sample < mSampleCount);
+    mSource->seek(mDataOffset + sample * mChannelCount * sizeof(s16), SEEK_SET);
 }

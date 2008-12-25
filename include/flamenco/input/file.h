@@ -32,7 +32,7 @@ public:
     u32 tell() const;
     
 private:
-    struct FILE * mFile;
+    FILE * mFile;
 };
 
 } // namespace flamenco

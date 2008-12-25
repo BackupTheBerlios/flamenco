@@ -2,7 +2,7 @@
  libflamenco - lightweight and efficient software sound mixing library.
  (c) Trickster Games, 2008. Licensed under GPL license.
 
- Источник звука из wav-файла.
+ Декодер wav-файлов без сжатия.
  */
 #pragma once
 #ifndef _FLAMENCO_INPUT_WAV_H_
@@ -13,54 +13,47 @@
 namespace flamenco
 {
 
-// Источник звука из wav-файла.
-class wav : public pin
+// Декодер wav-файлов без сжатия.
+class wav_decoder : noncopyable
 {
 public:
-    ~wav();
+    wav_decoder( std::auto_ptr<source> source );
+    ~wav_decoder();
     
-    // Создание источника звука.
-    static reference<wav> create( const char * path );
+    // Копирует в левый и правый каналы count декодированных семплов.
+    // Возвращает количество скопированных семплов, оно может быть меньше count,
+    // если поток закончился.
+    u32 unpack( f32 * left, f32 * right, u32 count );
     
-    // Флаг зацикленности звука.
-    atomic<bool> looping;
+    // Установка курсора начала декодирования на заданный семпл.
+    void seek( u32 sample );
     
+    // Длина потока в семплах. Функция оптимизирована для частых вызовов.
+    inline u32 length() const
+    {
+        return mSampleCount;
+    }
+    
+    // Частота звукового потока (для преобразования частоты потоком).
+    inline u32 frequency() const
+    {
+        return mSampleRate;
+    }
     
 private:
-    wav( const char * path );
+    // Источник данных.
+    std::auto_ptr<source> mSource;
     
-    // Помещает данные из буфера в левый и правый каналы.
-    void process( f32 * left, f32 * right );
-    // Чтение данных из файла во внутренний буфер.
-    void fill(bool looping);
-    // Распаковка одной порции данных в буфер
-    // Или буфер целиком или его часть.
-    u32 unpack(s16 * dst, u32 offset, u32 size);
-    
-    // Количество каналов.
-    u32 mChannels;
-    // Частота.
-    u32 mFrequency;
-    
-    // Буфер для семплов размером BUFFER_SIZE_IN_SAMPLES.
-    s16 * mSamples;
-    // Текущий семпл от начала буфера.
-    u32 mSamplesCurrent;
-    // Реальное количество семплов в буфере.
+    // Смещение от начала файла до начала wav-данных.
+    u32 mDataOffset;
+    // Частота дискретизации.
+    u32 mSampleRate;
+    // Длина звука в семплах.
     u32 mSampleCount;
-    
-    // Файл для чтения.
-    FILE * mInput;
-    // Начало блока данных в файле.
-    u32 mInputOffset;
-    // Признак окончания файла.
-    bool mIsFinished;
-    
-    // Магическое число для проверки массива.
-    static const s16 MAGIC;
-    
-    // Максимальный размер буфера в семплах.
-    static const u32 BUFFER_SIZE_IN_SAMPLES;
+    // Количество каналов (1 или 2).
+    u32 mChannelCount;
+    // Буфер для преобразования семплов из interleaved s16 в separate f32.
+    s16 * mChannelBuffer;
 };
 
 } // namespace flamenco
