@@ -13,9 +13,8 @@
 namespace flamenco
 {
 
-
 // Источник звука из wv-файла.
-class wavpack_decoder : public pin
+class wavpack_decoder : noncopyable
 {
 public:
 	wavpack_decoder( std::auto_ptr<source> source );
@@ -42,9 +41,9 @@ public:
 	}
 
 private:
-	// Распаковывает из vorbis потока count семплов во внутренний буфер начиная со смещения offset 
+	// Распаковывает из wavpack потока count семплов во внутренний буфер.
 	// Возвращает количество прочитанных семплов
-	u32 unpack_wavpack(u32 * dst, u32 offset, u32 size);
+	u32 unpack_wavpack(s32 * dst, u32 size);
 
 	// Источник данных.
 	std::auto_ptr<source> mSource;
@@ -57,7 +56,7 @@ private:
 	u32 mChannelCount;
 
 	// Буфер для преобразования семплов из interleaved s16 в separate f32.
-	s16 * mBuffer;
+	s32 * mBuffer;
 	// Размер буфера в семплах
 	u32 mBufferSize;
 

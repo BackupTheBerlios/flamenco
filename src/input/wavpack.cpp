@@ -23,26 +23,26 @@ uint32_t get_pos( void * id )
 	return input->tell();
 }
 
-int set_pos_abs( void *id, uint32_t pos )
+static int set_pos_abs( void *id, uint32_t pos )
 {
 	source * input = reinterpret_cast<source *>(id);
-	input->seek(pos, SEEK_SET);
-	return 0;
+    input->seek(pos, SEEK_SET);
+    return 0;
 }
 
-int set_pos_rel( void *id, int32_t delta, int mode )
+static int set_pos_rel( void *id, int32_t delta, int mode )
 {
 	source * input = reinterpret_cast<source *>(id);
-	input->seek(delta, mode);
-	return 0;
+    input->seek(delta, mode);
+    return 0;
 }
 
-int push_back_byte( void *, int )
+static int push_back_byte( void *, int)
 {
 	return EOF;
 }
 
-uint32_t get_length( void *id )
+static uint32_t get_length( void *id )
 {
 	source * input = reinterpret_cast<source *>(id);
 	u32 offset = input->tell();
@@ -52,17 +52,24 @@ uint32_t get_length( void *id )
 	return size;
 }
 
-int can_seek( void * )
+static int can_seek( void * )
 {
 	return true;
 }
 
-int32_t write_bytes( void *, void *, int32_t )
+static int32_t write_bytes( void *, void *, int32_t )
 {
 	return 0;
 }
 
+static WavpackStreamReader CALLBACKS = {
+    read_bytes, get_pos, set_pos_abs, 
+    set_pos_rel, push_back_byte, get_length, 
+    can_seek, write_bytes
+};
+
 }
+
 
 wavpack_decoder::wavpack_decoder( std::auto_ptr<source> source )
 	: mSource(source), mSampleRate(0), mSampleCount(0),
@@ -71,13 +78,9 @@ wavpack_decoder::wavpack_decoder( std::auto_ptr<source> source )
 {
 	assert(mSource.get());
 
-	WavpackStreamReader cb =
-		{ read_bytes, get_pos, set_pos_abs, set_pos_rel, push_back_byte, get_length, can_seek, write_bytes };
-
-
 	// Буфер для ошибок при разборе wv-файла, количество символов - из документации.
 	char error[80];
-	mWavpackFile = WavpackOpenFileInputEx(&cb, mSource.get(), NULL, error, OPEN_NORMALIZE, 0);
+    mWavpackFile = WavpackOpenFileInputEx(&CALLBACKS, mSource.get(), NULL, error, OPEN_NORMALIZE, 0);
 	if (NULL == mWavpackFile)
 		throw std::runtime_error(error);
 
@@ -92,133 +95,61 @@ wavpack_decoder::wavpack_decoder( std::auto_ptr<source> source )
 	// Получаем частоту.
 	mSampleRate = WavpackGetSampleRate(mWavpackFile);
 
+    // Количество семплов
 	mSampleCount = WavpackGetNumSamples(mWavpackFile);
+	
+    // Размер буфера определяется экспериментальным путем
+    mBufferSize = mSampleCount > CHANNEL_BUFFER_SIZE_IN_SAMPLES * LATENCY_MSEC ? CHANNEL_BUFFER_SIZE_IN_SAMPLES * LATENCY_MSEC : mSampleCount;
 
-	// Создаем буфер для чтения файла.
-/*	mSamples = new s32[BUFFER_SIZE_IN_SAMPLES + 1];
-	mSamples[BUFFER_SIZE_IN_SAMPLES] = MAGIC;
-	mSamplesCount = unpack(mSamples, 0, BUFFER_SIZE_IN_SAMPLES);
-	*/
+    // Магическое домножение
+    mBufferSize *= 2 * mChannelCount;
 
+    mBuffer = new s32[mBufferSize + 1];
+    mBufferRealSize = unpack_wavpack(mBuffer, mBufferSize);
 }
+
+u32 wavpack_decoder::unpack_wavpack(s32 * dst, u32 count)
+{
+    return WavpackUnpackSamples(mWavpackFile, reinterpret_cast<int32_t*>(dst), count / mChannelCount) * mChannelCount;
+}
+
+void wavpack_decoder::seek( u32 sample )
+{
+    WavpackSeekSample(mWavpackFile, sample);
+    // Сбрасываем указатель на текущий семпл
+    mBufferOffset = 0;
+    // Обнуляем буфер
+    mBufferRealSize = 0;
+}
+
+// Копирует в левый и правый каналы count декодированных семплов.
+u32 wavpack_decoder::unpack( f32 * left, f32 * right, u32 count )
+{
+    u32 samplesCount = 0; 
+    s32 * ptr = mBuffer + mBufferOffset;
+
+    for (u32 i = 0; i < CHANNEL_BUFFER_SIZE_IN_SAMPLES; ++i)
+    {
+        if (mBufferOffset >= mBufferRealSize)
+        {
+            // Пытаемся подгрузить еще данных в буфер
+            mBufferOffset = 0;
+            ptr = mBuffer;
+            if (0 == (mBufferRealSize = unpack_wavpack(mBuffer, mBufferSize)))
+                break;
+        }
+        f32 sample = *left++ = *ptr++ / static_cast<f32>(1 << 15);
+        *right++ = (mChannelCount == 1) ? sample : *ptr++ / static_cast<f32>(1 << 15);
+        mBufferOffset += mChannelCount;
+        if (++samplesCount == count)
+            break;
+    }
+    return samplesCount;
+}
+
 
 wavpack_decoder::~wavpack_decoder()
 {
 	WavpackCloseFile(mWavpackFile);
 	delete [] mBuffer;
 }
-
-#if 0
-
-// Волшебное значение для проверки выхода за границы буферов.
-const s32 wavpack::MAGIC = 0x900d;
-// Максимальный размер буфера в семплах
-const u32 wavpack::BUFFER_SIZE_IN_SAMPLES = 1 << 16;
-
-// Создание источника звука из wv-файла.
-wavpack::wavpack( const char * path )
-    : mSamples(NULL), mSamplesCount(0), mSamplesCurrent(0),
-      mChannels(0), looping(false), mIsFinished(false)
-{
-	assert(mSource.get());
-
-	WavpackStreamReader cb =
-	{
-		read_bytes, get_pos, set_pos_abs, set_pos_rel, push_back_byte, get_length, can_seek, write_bytes
-	};
-
-	/*
-    // Буфер для ошибок при разборе wv-файла, количество символов - из документации.
-    char error[80];
-    mInput = WavpackOpenFileInput(path, error, OPEN_NORMALIZE, 0);
-    if (NULL == mInput)
-        throw std::runtime_error(error);
-
-    // Получаем количество каналов.
-    mChannels = WavpackGetNumChannels(mInput);
-    if (mChannels != 1 && mChannels != 2)
-        throw std::runtime_error("Too many channels in wav-file");
-
-    // На всякий случай проверяем битность.
-    assert(WavpackGetBitsPerSample(mInput) == 16);
-
-    // Получаем частоту.
-    mFrequency = WavpackGetSampleRate(mInput);
-
-    // Создаем буфер для чтения файла.
-    mSamples = new s32[BUFFER_SIZE_IN_SAMPLES + 1];
-    mSamples[BUFFER_SIZE_IN_SAMPLES] = MAGIC;
-    mSamplesCount = unpack(mSamples, 0, BUFFER_SIZE_IN_SAMPLES);
-	*/
-}
-
-// Распаковка одной порции данных в буфер
-u32 wavpack::unpack(s32 * dst, u32 offset, u32 size)
-{
-    return WavpackUnpackSamples(mInput, reinterpret_cast<int32_t*>(dst + offset), (size - offset) / mChannels) * mChannels;
-}
-
-// Читаем из файла в буфер в зависимости от флага looping
-void wavpack::fill(bool looping)
-{
-    // Пытаемся заполнить весь буфер за раз
-    mSamplesCount = unpack(mSamples, 0, BUFFER_SIZE_IN_SAMPLES);
-    
-    if (looping)
-    {
-        // Цикл необходим для чтения файлов, размер которых меньше буфера
-        while (mSamplesCount < BUFFER_SIZE_IN_SAMPLES)
-        {
-            // Переходим на начало данных в файле
-            WavpackSeekSample(mInput, 0);
-            // Читаем очередную порцию
-            mSamplesCount += unpack(mSamples, mSamplesCount, BUFFER_SIZE_IN_SAMPLES);
-        }
-    }
-    mIsFinished = (mSamplesCount < BUFFER_SIZE_IN_SAMPLES && !looping);
-    
-    // Проверка выхода за пределы массива
-    assert(MAGIC == mSamples[BUFFER_SIZE_IN_SAMPLES]);
-};
-
-// Заполняем левый и правый каналы из внутреннего буфера.
-void wavpack::process( f32 * left, f32 * right )
-{   
-    bool looping = this->looping();
-
-    if (!looping && mIsFinished)
-        return;
-
-    const s32 * ptr = mSamples + mSamplesCurrent;
-
-    for (u32 i = 0; i < CHANNEL_BUFFER_SIZE_IN_SAMPLES; ++i)
-    {
-        // Если буфер подошел к концу
-        if (mSamplesCurrent >= mSamplesCount)
-        {
-            // Начинаем сначала
-            mSamplesCurrent = 0;
-            ptr = mSamples;
-            // Заполняем внутренний буфер
-            fill(looping);
-        }
-        f32 sample = *left++ = *ptr++ / static_cast<f32>(1 << 16);
-        *right++ = (mChannels == 1) ? sample : *ptr++ / static_cast<f32>(1 << 16);
-        
-        mSamplesCurrent += mChannels;
-    }
-}
-
-// Деструктор
-wavpack::~wavpack()
-{
-    delete [] mSamples;
-    WavpackCloseFile(mInput);
-}
-
-// Создание источника звука из wv-файла.
-reference<wavpack> wavpack::create( const char * path )
-{
-    return reference<wavpack>(new wavpack(path));
-}
-#endif

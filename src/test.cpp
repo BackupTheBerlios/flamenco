@@ -72,14 +72,14 @@ int main()
     LPDIRECTSOUNDBUFFER soundBuffer = NULL;
     check_directx(directSound->CreateSoundBuffer(&desc, &soundBuffer, NULL));
     
-    
+    reference<stream<wavpack_decoder> > sound = stream<wavpack_decoder>::create(std::auto_ptr<source>(new file_source("input.wv")));
     
     // Инициализация flamenco.
     reference<pin> wave = sine::create(400);
     //reference<ogg> wave = ogg::create("input.ogg");
     reference<pin> noise = noise::create();
     
-    reference<volume_pan> vp = volume_pan::create(wave, 1.0f, 0.0f);
+    reference<volume_pan> vp = volume_pan::create(sound, 1.0f, 0.0f);
     mixer & mixer = mixer::singleton();
     //mixer.attach(sine);
     mixer.attach(vp);
@@ -130,7 +130,7 @@ int main()
                 continue;
             
             case 'l':
-//                wave->looping.set(!wave->looping());
+                sound->looping.set(!sound->looping());
                 continue;
             }
             // Если нажата любая другая клавиша - выходим.

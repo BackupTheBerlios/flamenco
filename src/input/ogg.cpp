@@ -15,7 +15,7 @@ namespace
 size_t read_func(void * ptr, size_t size, size_t count, void *datasource)
 {
     source * input = reinterpret_cast<source *>(datasource);
-    return input->read(static_cast<void *>(ptr), size, count);
+    return static_cast<size_t>(input->read(static_cast<void *>(ptr), static_cast<u32>(size), static_cast<u32>(count)));
 }
 
 int seek_func(void * datasource, ogg_int64_t offset, int whence)
@@ -77,7 +77,7 @@ ogg_decoder::ogg_decoder( std::auto_ptr<source> source )
     mSampleCount = static_cast<u32>(ov_pcm_total(mVorbisFile, -1)) / mChannelCount;
 
     // Размер буфера определяется экспериментальным путем
-	mBufferSize = mSampleCount > CHANNEL_BUFFER_SIZE_IN_SAMPLES * (1000 / LATENCY_MSEC) ? CHANNEL_BUFFER_SIZE_IN_SAMPLES : mSampleCount;
+    mBufferSize = mSampleCount > CHANNEL_BUFFER_SIZE_IN_SAMPLES * LATENCY_MSEC ? CHANNEL_BUFFER_SIZE_IN_SAMPLES * LATENCY_MSEC : mSampleCount;
 
 	// Магическое домножение
 	mBufferSize *= 2 * mChannelCount;
