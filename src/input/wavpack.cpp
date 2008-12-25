@@ -115,11 +115,23 @@ u32 wavpack_decoder::unpack_wavpack(s32 * dst, u32 count)
 
 void wavpack_decoder::seek( u32 sample )
 {
-    WavpackSeekSample(mWavpackFile, sample);
+    // Если ошибка, значит надо открывать файл заново!
+    if (!WavpackSeekSample(mWavpackFile, sample))
+    {
+        // Открываем файл заново
+        WavpackCloseFile(mWavpackFile);
+        char error[80];
+        mWavpackFile = WavpackOpenFileInputEx(&CALLBACKS, mSource.get(), NULL, error, OPEN_NORMALIZE, 0);
+        if (NULL == mWavpackFile)
+            throw std::runtime_error(error);
+        // Пытаемся сделать seek еще раз
+        if (!WavpackSeekSample(mWavpackFile, sample))
+            throw std::runtime_error("Seeking error.");
+    }
     // Сбрасываем указатель на текущий семпл
     mBufferOffset = 0;
     // Обнуляем буфер
-    mBufferRealSize = 0;
+    mBufferRealSize = unpack_wavpack(mBuffer, mBufferSize);;
 }
 
 // Копирует в левый и правый каналы count декодированных семплов.
