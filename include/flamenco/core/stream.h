@@ -87,7 +87,10 @@ public:
 private:
     stream( std::auto_ptr<source> source )
         : mDecoder(source)
-        {}
+    {
+        if (!frequency_is_supported(mDecoder.frequency()))
+            throw std::runtime_error("Unsupported sample rate.");
+    }
     
     // Заполняет буферы каналов звуковыми данными, полученными от декодера.
     // Если частота данных декодера не совпадает с частотой библиотеки,
@@ -98,6 +101,12 @@ private:
     inline u32 length() const
     {
         return mDecoder.length();
+    }
+    
+    // Поддерживается ли частота файла библиотекой.
+    bool frequency_is_supported( u32 freq )
+    {
+        return freq == 44100 || freq == 32000 || freq == 22050;
     }
     
     // Декодер.

@@ -10,17 +10,6 @@
 
 using namespace flamenco;
 
-namespace
-{
-
-// Поддерживается ли частота файла библиотекой.
-bool frequency_is_supported( u32 freq )
-{
-    return freq == 44100 || freq == 32000 || freq == 22050;
-}
-
-} // namespace
-
 // Конструктор.
 wav_decoder::wav_decoder( std::auto_ptr<source> source )
     : mSource(source), mDataOffset(0), mSampleRate(0),
@@ -56,8 +45,6 @@ wav_decoder::wav_decoder( std::auto_ptr<source> source )
     if (format.wBitsPerSample != 16)
         throw std::runtime_error("Unsupported sample format (expected 16 bits).");
     mSampleRate = format.nSamplesPerSec;
-    if (!frequency_is_supported(mSampleRate))
-        throw std::runtime_error("Unsupported sample rate.");
     mChannelCount = format.nChannels;
     assert(0 != mChannelCount);
     if (mChannelCount > 2)
