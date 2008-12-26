@@ -83,12 +83,12 @@ ogg_decoder::ogg_decoder( std::auto_ptr<source> source )
 	mBufferSize *= 2 * mChannelCount;
 
     mBuffer = new s16[mBufferSize];
-    mBufferRealSize = unpack_vorbis(mBuffer, 0, mBufferSize);
 }
 
 void ogg_decoder::seek( u32 sample )
 {
-    ov_pcm_seek(mVorbisFile, sample * mChannelCount);
+    if (ov_pcm_seek(mVorbisFile, sample * mChannelCount) != 0)
+        throw std::runtime_error("Seeking error.");
     // Сбрасываем указатель на текущий семпл
     mBufferOffset = 0;
     // Обнуляем буфер
