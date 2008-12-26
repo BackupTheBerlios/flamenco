@@ -28,7 +28,7 @@ u32 file_source::read( void * destination, u32 size, u32 count )
 {
     assert(NULL != mFile);
     assert(NULL != destination);
-    return fread(destination, size, count, mFile);
+    return static_cast<u32>(fread(destination, size, count, mFile));
 }
 
 // Перемещение курсора чтения. Аналог функции fseek().
