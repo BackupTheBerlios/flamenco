@@ -58,7 +58,7 @@ static int32_t write_bytes( void *, void *, int32_t )
 	return 0;
 }
 
-static WavpackStreamReader CALLBACKS = {
+static WavpackStreamReader gCallbacks = {
     read_bytes, get_pos, set_pos_abs, 
     set_pos_rel, push_back_byte, get_length, 
     can_seek, write_bytes
@@ -76,7 +76,7 @@ wavpack_decoder::wavpack_decoder( std::auto_ptr<source> source )
 
 	// Буфер для ошибок при разборе wv-файла, количество символов - из документации.
 	char error[80];
-    mWavpackFile = WavpackOpenFileInputEx(&CALLBACKS, mSource.get(), NULL, error, OPEN_NORMALIZE, 0);
+    mWavpackFile = WavpackOpenFileInputEx(&gCallbacks, mSource.get(), NULL, error, OPEN_NORMALIZE, 0);
 	if (NULL == mWavpackFile)
 		throw std::runtime_error(error);
 
@@ -117,7 +117,7 @@ void wavpack_decoder::seek( u32 sample )
         WavpackCloseFile(mWavpackFile);
         char error[80];
         mSource->seek(0, SEEK_SET);
-        mWavpackFile = WavpackOpenFileInputEx(&CALLBACKS, mSource.get(), NULL, error, OPEN_NORMALIZE, 0);
+        mWavpackFile = WavpackOpenFileInputEx(&gCallbacks, mSource.get(), NULL, error, OPEN_NORMALIZE, 0);
         if (NULL == mWavpackFile)
             throw std::runtime_error(error);
         // Пытаемся сделать seek еще раз

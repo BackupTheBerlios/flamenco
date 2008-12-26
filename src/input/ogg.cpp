@@ -36,6 +36,13 @@ int close_func(void *)
     return 0;
 }
 
+static ov_callbacks gCallbacks = {
+    read_func,
+    seek_func, 
+    close_func, 
+    tell_func
+};
+
 }
 
 
@@ -47,18 +54,9 @@ ogg_decoder::ogg_decoder( std::auto_ptr<source> source )
 {
     assert(mSource.get());
 
-    // Структура для чтения данных
-    ov_callbacks cb;
-
-    // Заполняем структуру
-    cb.close_func = close_func;
-    cb.read_func  = read_func;
-    cb.seek_func  = seek_func;
-    cb.tell_func  = tell_func;
-
     // Создаем и открываем vorbis поток
     mVorbisFile = new OggVorbis_File;
-    if (ov_open_callbacks(mSource.get(), mVorbisFile, NULL, -1, cb) < 0)
+    if (ov_open_callbacks(mSource.get(), mVorbisFile, NULL, -1, gCallbacks) < 0)
         throw std::runtime_error("File is not a valid ogg container.");
 
     // Информация о потоке vorbis.
