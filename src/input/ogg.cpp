@@ -77,8 +77,8 @@ ogg_decoder::ogg_decoder( std::auto_ptr<source> source )
     // Размер буфера определяется экспериментальным путем
     mBufferSize = mSampleCount > CHANNEL_BUFFER_SIZE_IN_SAMPLES * LATENCY_MSEC ? CHANNEL_BUFFER_SIZE_IN_SAMPLES * LATENCY_MSEC : mSampleCount;
 
-	// Магическое домножение
-	mBufferSize *= 2 * mChannelCount;
+    // Магическое домножение
+    mBufferSize *= 2 * mChannelCount;
 
     mBuffer = new s16[mBufferSize];
 }
@@ -88,7 +88,7 @@ void ogg_decoder::seek( u32 sample )
     if (ov_pcm_seek(mVorbisFile, sample * mChannelCount) != 0)
         throw std::runtime_error("Seeking error.");
     // Сбрасываем указатель на текущий семпл
-    mBufferOffset = sample * mChannelCount;
+    mBufferOffset = 0;
     // Обнуляем буфер
     mBufferRealSize = 0;
 }
@@ -97,8 +97,8 @@ void ogg_decoder::seek( u32 sample )
 // Возвращает количество прочитанных семплов
 u32 ogg_decoder::unpack_vorbis(s16 * dst, u32 offset, u32 count)
 {
-	int currentSection;
-	const u32 ORIGINAL_OFFSET = offset;
+    int currentSection;
+    const u32 ORIGINAL_OFFSET = offset;
 
     while (offset < count)
     {
@@ -106,7 +106,7 @@ u32 ogg_decoder::unpack_vorbis(s16 * dst, u32 offset, u32 count)
         if (result == 0)
             break;
         else if (result > 0)
-			offset += result;
+            offset += result;
     }
     return (offset - ORIGINAL_OFFSET) / sizeof(s16);
 }
@@ -117,22 +117,22 @@ u32 ogg_decoder::unpack( f32 * left, f32 * right, u32 count )
     u32 samplesCount = 0; 
     s16 * ptr = mBuffer + mBufferOffset;
 
-	for (u32 i = 0; i < CHANNEL_BUFFER_SIZE_IN_SAMPLES; ++i)
-	{
-		if (mBufferOffset >= mBufferRealSize)
-		{
-			// Пытаемся подгрузить еще данных в буфер
-			mBufferOffset = 0;
-			ptr = mBuffer;
-			if (0 == (mBufferRealSize = unpack_vorbis(mBuffer, 0, mBufferSize)))
-				break;
-		}
-		f32 sample = *left++ = *ptr++ / static_cast<f32>(1 << 15);
-		*right++ = (mChannelCount == 1) ? sample : *ptr++ / static_cast<f32>(1 << 15);
-		mBufferOffset += mChannelCount;
-		if (++samplesCount == count)
-			break;
-	}
+    for (u32 i = 0; i < CHANNEL_BUFFER_SIZE_IN_SAMPLES; ++i)
+    {
+        if (mBufferOffset >= mBufferRealSize)
+        {
+            // Пытаемся подгрузить еще данных в буфер
+            mBufferOffset = 0;
+            ptr = mBuffer;
+            if (0 == (mBufferRealSize = unpack_vorbis(mBuffer, 0, mBufferSize)))
+                break;
+        }
+        f32 sample = *left++ = *ptr++ / static_cast<f32>(1 << 15);
+        *right++ = (mChannelCount == 1) ? sample : *ptr++ / static_cast<f32>(1 << 15);
+        mBufferOffset += mChannelCount;
+        if (++samplesCount == count)
+            break;
+    }
     return samplesCount;
 }
 
