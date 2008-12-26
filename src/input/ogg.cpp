@@ -88,7 +88,7 @@ void ogg_decoder::seek( u32 sample )
     if (ov_pcm_seek(mVorbisFile, sample * mChannelCount) != 0)
         throw std::runtime_error("Seeking error.");
     // Сбрасываем указатель на текущий семпл
-    mBufferOffset = 0;
+    mBufferOffset = sample * mChannelCount;
     // Обнуляем буфер
     mBufferRealSize = 0;
 }

@@ -125,7 +125,7 @@ void wavpack_decoder::seek( u32 sample )
             throw std::runtime_error("Seeking error.");
     }
     // Сбрасываем указатель на текущий семпл
-    mBufferOffset = 0;
+    mBufferOffset = sample * mChannelCount;
     // Обнуляем буфер
     mBufferRealSize = 0;
 }
