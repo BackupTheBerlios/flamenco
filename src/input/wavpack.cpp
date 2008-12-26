@@ -42,19 +42,15 @@ static int push_back_byte( void *, int)
 	return EOF;
 }
 
-static uint32_t get_length( void *id )
+static uint32_t get_length( void * )
 {
-	source * input = reinterpret_cast<source *>(id);
-	u32 offset = input->tell();
-	input->seek(0, SEEK_END);
-	u32 size = input->tell();
-	input->seek(offset, SEEK_SET);
-	return size;
+    // Если попытаться отдать реальную длину, файл будет проигрываться не с начала
+    return static_cast<uint32_t>(-1);
 }
 
 static int can_seek( void * )
 {
-	return true;
+	return 1;
 }
 
 static int32_t write_bytes( void *, void *, int32_t )
@@ -105,7 +101,6 @@ wavpack_decoder::wavpack_decoder( std::auto_ptr<source> source )
     mBufferSize *= 2 * mChannelCount;
 
     mBuffer = new s32[mBufferSize + 1];
-    mBufferRealSize = unpack_wavpack(mBuffer, mBufferSize);
 }
 
 u32 wavpack_decoder::unpack_wavpack(s32 * dst, u32 count)
@@ -121,6 +116,7 @@ void wavpack_decoder::seek( u32 sample )
         // Открываем файл заново
         WavpackCloseFile(mWavpackFile);
         char error[80];
+        mSource->seek(0, SEEK_SET);
         mWavpackFile = WavpackOpenFileInputEx(&CALLBACKS, mSource.get(), NULL, error, OPEN_NORMALIZE, 0);
         if (NULL == mWavpackFile)
             throw std::runtime_error(error);
@@ -131,7 +127,7 @@ void wavpack_decoder::seek( u32 sample )
     // Сбрасываем указатель на текущий семпл
     mBufferOffset = 0;
     // Обнуляем буфер
-    mBufferRealSize = unpack_wavpack(mBuffer, mBufferSize);;
+    mBufferRealSize = 0;
 }
 
 // Копирует в левый и правый каналы count декодированных семплов.
