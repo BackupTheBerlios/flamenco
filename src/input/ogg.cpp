@@ -93,22 +93,22 @@ void ogg_decoder::seek( u32 sample )
     mBufferRealSize = 0;
 }
 
-// Распаковывает из vorbis потока count семплов во внутренний буфер начиная со смещения offset 
-// Возвращает количество прочитанных семплов
-u32 ogg_decoder::unpack_vorbis(s16 * dst, u32 offset, u32 count)
+// Распаковывает из vorbis потока count семплов во внутренний буфер.
+// Возвращает количество прочитанных семплов.
+u32 ogg_decoder::unpack_vorbis(s16 * dst, u32 count)
 {
     int currentSection;
-    const u32 ORIGINAL_OFFSET = offset;
+    u32 readSamples = 0;
 
-    while (offset < count)
+    while (readSamples < count)
     {
-        int result = ov_read(mVorbisFile, reinterpret_cast<char *>(dst + offset / sizeof(s16)), (count - offset) , 0, sizeof(s16), 1, &currentSection);
+        int result = ov_read(mVorbisFile, reinterpret_cast<char *>(dst + readSamples / sizeof(s16)), (count - readSamples) , 0, sizeof(s16), 1, &currentSection);
         if (result == 0)
             break;
         else if (result > 0)
-            offset += result;
+            readSamples += result;
     }
-    return (offset - ORIGINAL_OFFSET) / sizeof(s16);
+    return readSamples / sizeof(s16);
 }
 
 // Копирует в левый и правый каналы count декодированных семплов.
@@ -124,7 +124,7 @@ u32 ogg_decoder::unpack( f32 * left, f32 * right, u32 count )
             // Пытаемся подгрузить еще данных в буфер
             mBufferOffset = 0;
             ptr = mBuffer;
-            if (0 == (mBufferRealSize = unpack_vorbis(mBuffer, 0, mBufferSize)))
+            if (0 == (mBufferRealSize = unpack_vorbis(mBuffer, mBufferSize)))
                 break;
         }
         f32 sample = *left++ = *ptr++ / static_cast<f32>(1 << 15);

@@ -42,9 +42,9 @@ public:
     }
     
 private:
-	// Распаковывает из vorbis потока count семплов во внутренний буфер начиная со смещения offset 
+	// Распаковывает из vorbis потока count семплов во внутренний буфер. 
 	// Возвращает количество прочитанных семплов
-	u32 unpack_vorbis(s16 * dst, u32 offset, u32 size);
+	u32 unpack_vorbis(s16 * dst, u32 size);
 
     // Источник данных.
     std::auto_ptr<source> mSource;

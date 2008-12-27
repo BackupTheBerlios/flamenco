@@ -72,7 +72,7 @@ int main()
     LPDIRECTSOUNDBUFFER soundBuffer = NULL;
     check_directx(directSound->CreateSoundBuffer(&desc, &soundBuffer, NULL));
     
-    reference<stream<wavpack_decoder> > sound = stream<wavpack_decoder>::create(std::auto_ptr<source>(new file_source("input.wv")));
+    reference<stream<ogg_decoder> > sound = stream<ogg_decoder>::create(std::auto_ptr<source>(new file_source("input.ogg")));
     
     // Инициализация flamenco.
     reference<pin> wave = sine::create(400);
