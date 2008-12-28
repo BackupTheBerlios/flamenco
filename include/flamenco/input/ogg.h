@@ -42,9 +42,9 @@ public:
     }
     
 private:
-	// Распаковывает из vorbis потока count семплов во внутренний буфер. 
+	// Распаковывает из vorbis потока mBufferSize семплов в mBuffer.
 	// Возвращает количество прочитанных семплов
-	u32 unpack_vorbis(s16 * dst, u32 size);
+	u32 unpack_vorbis();
 
     // Источник данных.
     std::auto_ptr<source> mSource;
@@ -57,7 +57,7 @@ private:
     u32 mChannelCount;
 
     // Буфер для преобразования семплов из interleaved s16 в separate f32.
-    s16 * mBuffer;
+    f32 * mBuffer;
     // Размер буфера в семплах
     u32 mBufferSize;
 
