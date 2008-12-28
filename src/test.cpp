@@ -5,6 +5,7 @@
  Пример использования библиотеки.
  */
 #include <flamenco/flamenco.h>
+#pragma warning(disable:4201) // Отключение предупреждения о nameless struct.
 #include <MMSystem.h>
 #include <dsound.h>
 #include <dxerr9.h>
