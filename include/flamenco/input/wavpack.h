@@ -41,9 +41,9 @@ public:
 	}
 
 private:
-	// Распаковывает из wavpack потока count семплов во внутренний буфер.
+	// Распаковывает из wavpack потока mBufferSize семплов в mBuffer.
 	// Возвращает количество прочитанных семплов
-	u32 unpack_wavpack(s32 * dst, u32 size);
+	u32 unpack_wavpack();
 
 	// Источник данных.
 	std::auto_ptr<source> mSource;

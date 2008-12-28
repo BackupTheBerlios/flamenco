@@ -103,9 +103,9 @@ wavpack_decoder::wavpack_decoder( std::auto_ptr<source> source )
     mBuffer = new s32[mBufferSize + 1];
 }
 
-u32 wavpack_decoder::unpack_wavpack(s32 * dst, u32 count)
+u32 wavpack_decoder::unpack_wavpack()
 {
-    return WavpackUnpackSamples(mWavpackFile, reinterpret_cast<int32_t*>(dst), count / mChannelCount) * mChannelCount;
+    return WavpackUnpackSamples(mWavpackFile, reinterpret_cast<int32_t*>(mBuffer), mBufferSize / mChannelCount) * mChannelCount;
 }
 
 void wavpack_decoder::seek( u32 sample )
@@ -143,7 +143,7 @@ u32 wavpack_decoder::unpack( f32 * left, f32 * right, u32 count )
             // ѕытаемс€ подгрузить еще данных в буфер
             mBufferOffset = 0;
             ptr = mBuffer;
-            if (0 == (mBufferRealSize = unpack_wavpack(mBuffer, mBufferSize)))
+            if (0 == (mBufferRealSize = unpack_wavpack()))
                 break;
         }
         f32 sample = *left++ = *ptr++ / static_cast<f32>(1 << 15);
