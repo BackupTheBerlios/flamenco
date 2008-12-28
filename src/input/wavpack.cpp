@@ -37,15 +37,22 @@ static int set_pos_rel( void *id, int32_t delta, int mode )
     return 0;
 }
 
-static int push_back_byte( void *, int)
+static int push_back_byte( void *id, int c )
 {
-    return EOF;
+    // Хитрый хак, подсмотренный в libxine.
+    source * input = reinterpret_cast<source *>(id);
+    input->seek(-1, SEEK_CUR);
+    return c;
 }
 
-static uint32_t get_length( void * )
+static uint32_t get_length( void * id )
 {
-    // Если попытаться отдать реальную длину, файл будет проигрываться не с начала
-    return static_cast<uint32_t>(-1);
+    source * input = reinterpret_cast<source *>(id);
+    u32 offset = input->tell();
+    input->seek(0, SEEK_END);
+    u32 size = input->tell();
+    input->seek(offset, SEEK_SET);
+    return size;
 }
 
 static int can_seek( void * )
