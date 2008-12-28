@@ -6,6 +6,8 @@
  */
 #include <flamenco/flamenco.h>
 
+#include <iostream>
+
 using namespace flamenco;
 
 namespace 
@@ -74,11 +76,8 @@ ogg_decoder::ogg_decoder( std::auto_ptr<source> source )
     // Общее количество семплов
     mSampleCount = static_cast<u32>(ov_pcm_total(mVorbisFile, -1)) / mChannelCount;
 
-    // Размер буфера определяется экспериментальным путем
-    mBufferSize = mSampleCount > CHANNEL_BUFFER_SIZE_IN_SAMPLES * LATENCY_MSEC ? CHANNEL_BUFFER_SIZE_IN_SAMPLES * LATENCY_MSEC : mSampleCount;
-
-    // Магическое домножение
-    mBufferSize *= 2 * mChannelCount;
+    // Размер буфера на одну секунду
+    mBufferSize = 2 * mSampleRate * mChannelCount;
 
     mBuffer = new f32[mBufferSize];
 }
@@ -97,6 +96,7 @@ void ogg_decoder::seek( u32 sample )
 // Возвращает количество прочитанных семплов.
 u32 ogg_decoder::unpack_vorbis()
 {
+    std::cout << "unpack_vorbis\n";
     int currentSection;
     u32 readSamples = 0;
     
@@ -127,7 +127,7 @@ u32 ogg_decoder::unpack_vorbis()
 
         }
     }
-    return readSamples / sizeof(s16);
+    return readSamples / 2;
 }
 
 // Копирует в левый и правый каналы count декодированных семплов.
