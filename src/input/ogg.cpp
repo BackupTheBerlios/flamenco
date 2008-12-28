@@ -6,6 +6,8 @@
  */
 #include <flamenco/flamenco.h>
 
+#include <iostream>
+
 using namespace flamenco;
 
 namespace 
@@ -39,7 +41,7 @@ int close_func(void *)
 static ov_callbacks gCallbacks = {
     read_func,
     seek_func, 
-    close_func, 
+    close_func,
     tell_func
 };
 
@@ -75,7 +77,7 @@ ogg_decoder::ogg_decoder( std::auto_ptr<source> source )
     mSampleCount = static_cast<u32>(ov_pcm_total(mVorbisFile, -1)) / mChannelCount;
 
     // Размер одного буфера на одну секунду
-    mBufferSize = 2 * mSampleRate;
+    mBufferSize = mSampleRate;
 
     mBufferL = new f32[mBufferSize];
     mBufferR = (mChannelCount == 2) ? new f32[mBufferSize] : mBufferL;
@@ -83,8 +85,19 @@ ogg_decoder::ogg_decoder( std::auto_ptr<source> source )
 
 void ogg_decoder::seek( u32 sample )
 {
+    // Если приходится делать seek назад, открываем файл заново.
+    if (ov_pcm_tell(mVorbisFile) > sample)
+    {
+        ov_clear(mVorbisFile);
+        mSource->seek(0, SEEK_SET);
+        mVorbisFile = new OggVorbis_File;
+        if (ov_open_callbacks(mSource.get(), mVorbisFile, NULL, -1, gCallbacks) < 0)
+            throw std::runtime_error("File is not a valid ogg container.");
+    }
+
     if (ov_pcm_seek(mVorbisFile, sample * mChannelCount) != 0)
         throw std::runtime_error("Seeking error.");
+
     // Сбрасываем указатель на текущий семпл
     mBufferOffset = 0;
     // Обнуляем буферы
@@ -98,21 +111,21 @@ u32 ogg_decoder::unpack_vorbis()
     int currentSection;
     u32 readSamples = 0;
     
-    while (readSamples < mBufferSize)
+    while (readSamples < mBufferSize * 2)
     {
         float ** pcm;
-        int result = ov_read_float(mVorbisFile, &pcm, (mBufferSize - readSamples) / 2, &currentSection);
+        int result = ov_read_float(mVorbisFile, &pcm, mBufferSize - readSamples, &currentSection);
         if (result == 0)
             break;
         else if (result > 0)
         {
-            memcpy(mBufferL + readSamples / 2, pcm[0], result * sizeof(f32));
+            memcpy(mBufferL + readSamples, pcm[0], result * sizeof(f32));
             if (mChannelCount == 2)
-                memcpy(mBufferR + readSamples / 2, pcm[1], result * sizeof(f32));
-            readSamples += result * 2;
+                memcpy(mBufferR + readSamples, pcm[1], result * sizeof(f32));
+            readSamples += result;
         }
     }
-    return readSamples / 2;
+    return readSamples;
 }
 
 // Копирует в левый и правый каналы count декодированных семплов.
@@ -130,11 +143,12 @@ u32 ogg_decoder::unpack( f32 * left, f32 * right, u32 count )
                 break;
         }
         const u32 SAMPLES_COUNT = std::min(mBufferRealSize - mBufferOffset, count - samplesCount);
-        memcpy(left, mBufferL + mBufferOffset, SAMPLES_COUNT * sizeof(f32));
-        memcpy(right, mBufferR + mBufferOffset, SAMPLES_COUNT * sizeof(f32));
+        memcpy(left + samplesCount, mBufferL + mBufferOffset, SAMPLES_COUNT * sizeof(f32));
+        memcpy(right + samplesCount, mBufferR + mBufferOffset, SAMPLES_COUNT * sizeof(f32));
         samplesCount += SAMPLES_COUNT;
         mBufferOffset += SAMPLES_COUNT;
     }
+//    std::cout << "Result: " << samplesCount << '\n';
     return samplesCount;
 }
 
