@@ -64,7 +64,7 @@ int main()
     DSBUFFERDESC desc;
     ZeroMemory(&desc, sizeof(DSBUFFERDESC));
     desc.dwSize          = sizeof(DSBUFFERDESC);
-    desc.dwFlags         = DSBCAPS_LOCSOFTWARE | DSBCAPS_GETCURRENTPOSITION2;
+    desc.dwFlags         = DSBCAPS_LOCSOFTWARE | DSBCAPS_GETCURRENTPOSITION2 | DSBCAPS_GLOBALFOCUS;
     desc.dwBufferBytes   = SOUND_BUFFER_SIZE_IN_BYTES;
     desc.guid3DAlgorithm = DS3DALG_DEFAULT;
     desc.lpwfxFormat     = &wfx;

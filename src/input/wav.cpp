@@ -50,7 +50,7 @@ wav_decoder::wav_decoder( std::auto_ptr<source> source )
     if (mChannelCount > 2)
         throw std::runtime_error("Expected mono or stereo stream.");
     // Создаем буфер для преобразования семплов.
-    mChannelBuffer = new s16[CHANNEL_BUFFER_SIZE_IN_SAMPLES * mChannelCount];
+    mChannelBuffer.reset(new s16[CHANNEL_BUFFER_SIZE_IN_SAMPLES * mChannelCount]);
     
     // Перематываем на начало следующего чанка и ищем секцию 'data'.
     const u32 DATA = 'atad';
@@ -58,10 +58,8 @@ wav_decoder::wav_decoder( std::auto_ptr<source> source )
     for (;;)
     {
         if (mSource->read(&chunkId, sizeof(u32), 1) != 1)
-        {
-            delete [] mChannelBuffer;
             throw std::runtime_error("EOF while looking for 'data' section.");
-        }
+        
         mSource->read(&chunkSize, sizeof(u32), 1);
         if (chunkId == DATA)
             break;
@@ -73,19 +71,13 @@ wav_decoder::wav_decoder( std::auto_ptr<source> source )
     mDataOffset = mSource->tell();
 }
 
-// Деструктор.
-wav_decoder::~wav_decoder()
-{
-    delete [] mChannelBuffer;
-}
-
 // Копирует в левый и правый каналы count декодированных семплов.
 u32 wav_decoder::unpack( f32 * left, f32 * right, u32 count )
 {
     // Количество семплов, которые можно считать.
     const u32 PORTION_SIZE = sizeof(s16) * mChannelCount,
               READ_COUNT = std::min(count, mSampleCount - (mSource->tell() - mDataOffset) / PORTION_SIZE);
-    u32 samplesRead = mSource->read(mChannelBuffer, PORTION_SIZE, READ_COUNT);
+    u32 samplesRead = mSource->read(mChannelBuffer.get(), PORTION_SIZE, READ_COUNT);
     assert(samplesRead == READ_COUNT);
     
     // Моно.

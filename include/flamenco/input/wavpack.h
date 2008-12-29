@@ -18,7 +18,6 @@ class wavpack_decoder : noncopyable
 {
 public:
     wavpack_decoder( std::auto_ptr<source> source );
-    ~wavpack_decoder();
 
     // Копирует в левый и правый каналы count декодированных семплов.
     // Возвращает количество скопированных семплов, оно может быть меньше count,
@@ -56,7 +55,7 @@ private:
     u32 mChannelCount;
 
     // Буфер для преобразования семплов из interleaved s32 в separate f32.
-    s32 * mBuffer;
+    auto_array<s32> mBuffer;
     // Размер буфера в семплах.
     u32 mBufferSize;
 
@@ -65,8 +64,17 @@ private:
     // Текущий семпл в буфере.
     u32 mBufferOffset;
 
+    // Deleter для WavpackContext
+    template <class T>
+    struct context_deleter
+    {
+        void operator ()( WavpackContext * context )
+        {
+            WavpackCloseFile(context);
+        }
+    };
     // Контекст декодирования wavpack.
-    WavpackContext * mWavpackFile;
+    auto_ptr<WavpackContext, context_deleter> mWavpackFile;
 };
 
 } // namespace flamenco

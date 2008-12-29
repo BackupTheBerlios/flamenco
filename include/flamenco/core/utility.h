@@ -186,6 +186,97 @@ private:
     }
 };
 
+// Умный указатель с семантикой владения и пользовательским deleter'ом.
+template <typename T, template<typename> class deleter>
+class auto_ptr
+{
+public:
+    explicit auto_ptr( T * ptr = NULL )
+        : mPtr(ptr)
+        {}
+    auto_ptr( auto_ptr & ptr )
+        : mPtr(ptr.release())
+        {}
+    template <class U>
+    auto_ptr( auto_ptr<U, deleter> & ptr )
+        : mPtr(ptr.release())
+        {}
+    auto_ptr & operator =( auto_ptr & ptr )
+    {
+        reset(ptr.release());
+    }
+    ~auto_ptr()
+    {
+        reset(NULL);
+    }
+    
+    const T * operator ->() const
+    {
+        assert(NULL != mPtr);
+        return mPtr;
+    }
+    T * operator ->()
+    {
+        return const_cast<T *>(const_cast<const auto_ptr *>(this)->operator ->());
+    }
+    
+    operator bool() const
+    {
+        return NULL != mPtr;
+    }
+    
+    T * release()
+    {
+        T * ptr = mPtr;
+        mPtr = NULL;
+        return ptr;
+    }
+    const T * get() const
+    {
+        return mPtr;
+    }
+    T * get()
+    {
+        return mPtr;
+    }
+    void reset( T * ptr )
+    {
+        if (mPtr)
+            deleter<T>()(mPtr);
+        mPtr = ptr;
+    }
+
+private:
+    T * mPtr;
+};
+// Deleter для массивов.
+template <typename T>
+struct array_deleter
+{
+    void operator ()( T * ptr )
+    {
+        delete [] ptr;
+    }
+};
+
+// Умный указатель на массив.
+template <typename T>
+class auto_array : public auto_ptr<T, array_deleter>
+{
+public:
+    explicit auto_array( T * ptr = NULL )
+        : auto_ptr<T, array_deleter>(ptr)
+        {}
+    const T & operator []( s32 index ) const
+    {
+        return *(get() + index);
+    }
+    T & operator []( s32 index )
+    {
+        return const_cast<T &>(const_cast<const auto_array *>(this)->operator [](index));
+    }
+};
+
 // Заполнение звукового буфера тишиной.
 inline void set_silence( f32 * buffer, u32 sizeInSamples )
 {

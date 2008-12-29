@@ -18,7 +18,6 @@ class wav_decoder : noncopyable
 {
 public:
     wav_decoder( std::auto_ptr<source> source );
-    ~wav_decoder();
     
     // Копирует в левый и правый каналы count декодированных семплов.
     // Возвращает количество скопированных семплов, оно может быть меньше count,
@@ -53,7 +52,7 @@ private:
     // Количество каналов (1 или 2).
     u32 mChannelCount;
     // Буфер для преобразования семплов из interleaved s16 в separate f32.
-    s16 * mChannelBuffer;
+    auto_array<s16> mChannelBuffer;
 };
 
 } // namespace flamenco
