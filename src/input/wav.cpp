@@ -58,7 +58,10 @@ wav_decoder::wav_decoder( std::auto_ptr<source> source )
     for (;;)
     {
         if (mSource->read(&chunkId, sizeof(u32), 1) != 1)
+        {
+            delete [] mChannelBuffer;
             throw std::runtime_error("EOF while looking for 'data' section.");
+        }
         mSource->read(&chunkSize, sizeof(u32), 1);
         if (chunkId == DATA)
             break;

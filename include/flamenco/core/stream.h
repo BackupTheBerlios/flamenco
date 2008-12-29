@@ -134,7 +134,6 @@ void stream<decoderT>::process( f32 * left, f32 * right )
     u32 count = mDecoder.unpack(left, right, CHANNEL_BUFFER_SIZE_IN_SAMPLES);
     if (count < CHANNEL_BUFFER_SIZE_IN_SAMPLES)
     {
-        assert(count != 0);
         if (looping)
         {
             // Заполняем буфер, читая файл снова и снова.
