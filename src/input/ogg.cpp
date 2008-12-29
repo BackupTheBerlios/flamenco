@@ -85,16 +85,6 @@ ogg_decoder::ogg_decoder( std::auto_ptr<source> source )
 
 void ogg_decoder::seek( u32 sample )
 {
-    // Если приходится делать seek назад, открываем файл заново.
-    if (ov_pcm_tell(mVorbisFile) > sample)
-    {
-        ov_clear(mVorbisFile);
-        mSource->seek(0, SEEK_SET);
-        mVorbisFile = new OggVorbis_File;
-        if (ov_open_callbacks(mSource.get(), mVorbisFile, NULL, -1, gCallbacks) < 0)
-            throw std::runtime_error("File is not a valid ogg container.");
-    }
-
     if (ov_pcm_seek(mVorbisFile, sample * mChannelCount) != 0)
         throw std::runtime_error("Seeking error.");
 
