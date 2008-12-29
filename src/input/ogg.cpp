@@ -101,7 +101,7 @@ u32 ogg_decoder::unpack_vorbis()
     int currentSection;
     u32 readSamples = 0;
     
-    while (readSamples < mBufferSize * 2)
+    while (readSamples < mBufferSize)
     {
         float ** pcm;
         int result = ov_read_float(mVorbisFile, &pcm, mBufferSize - readSamples, &currentSection);
