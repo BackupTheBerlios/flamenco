@@ -142,6 +142,7 @@ u32 ogg_decoder::unpack( f32 * left, f32 * right, u32 count )
 ogg_decoder::~ogg_decoder()
 {
     ov_clear(mVorbisFile);
+    delete mVorbisFile;
     delete [] mBufferL;
     if (mChannelCount == 2)
         delete [] mBufferR;
