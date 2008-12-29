@@ -11,56 +11,59 @@ using namespace flamenco;
 namespace 
 {
 
-// Вспомогательные методы для чтения файла.
-size_t read_func(void * ptr, size_t size, size_t count, void *datasource)
+// Чтение данных из потока.
+size_t read_func( void * ptr, size_t size, size_t count, void * datasource )
 {
     source * input = reinterpret_cast<source *>(datasource);
-    return static_cast<size_t>(input->read(static_cast<void *>(ptr), static_cast<u32>(size), static_cast<u32>(count)));
+    return static_cast<size_t>(input->read(static_cast<void *>(ptr), static_cast<u32>(size),
+                                           static_cast<u32>(count)));
 }
 
-int seek_func(void * datasource, ogg_int64_t offset, int whence)
+// Перемещение по потоку.
+int seek_func( void * datasource, ogg_int64_t offset, int whence )
 {
-    source * input = reinterpret_cast<source *>(datasource);
-    input->seek(static_cast<s32>(offset), whence);
+    reinterpret_cast<source *>(datasource)->seek(static_cast<s32>(offset), whence);
     return 0;
 }
 
-long tell_func(void * datasource)
+// Получение смещения в потоке.
+long tell_func( void * datasource )
 {
-    source * input = reinterpret_cast<source *>(datasource);
-    return input->tell();
+    return reinterpret_cast<source *>(datasource)->tell();
 }
 
-int close_func(void *)
+// Закрытие потока - не требуется.
+int close_func( void * )
 {
     return 0;
 }
 
-static ov_callbacks gCallbacks = {
+// Структура с указателями на функции для работы с потоком.
+ov_callbacks gCallbacks = {
     read_func,
     seek_func, 
     close_func,
     tell_func
 };
 
-}
+} // namespace flamenco
 
 
-// Конструктор
+// Конструктор.
 ogg_decoder::ogg_decoder( std::auto_ptr<source> source )
     : mSource(source), mSampleRate(0), mSampleCount(0),
       mChannelCount(0), mBufferL(NULL), mBufferR(NULL), 
-      mBufferSize(0), mBufferRealSize(0), mBufferOffset(0)
+      mBufferSize(0), mBufferFilledSize(0), mBufferOffset(0)
 {
     assert(mSource.get());
 
-    // Создаем и открываем vorbis поток
-    mVorbisFile = new OggVorbis_File;
-    if (ov_open_callbacks(mSource.get(), mVorbisFile, NULL, -1, gCallbacks) < 0)
+    // Создаем и открываем vorbis поток.
+    mVorbisFile.reset(new OggVorbis_File);
+    if (ov_open_callbacks(mSource.get(), mVorbisFile.get(), NULL, -1, gCallbacks) < 0)
         throw std::runtime_error("File is not a valid ogg container.");
 
     // Информация о потоке vorbis.
-    mVorbisInfo = ov_info(mVorbisFile, -1);
+    mVorbisInfo.reset(ov_info(mVorbisFile.get(), -1));
 
     // Количество каналов.
     mChannelCount = mVorbisInfo->channels;
@@ -71,79 +74,75 @@ ogg_decoder::ogg_decoder( std::auto_ptr<source> source )
     // Частота.
     mSampleRate = mVorbisInfo->rate;
 
-    // Общее количество семплов
-    mSampleCount = static_cast<u32>(ov_pcm_total(mVorbisFile, -1)) / mChannelCount;
+    // Общее количество семплов.
+    mSampleCount = static_cast<u32>(ov_pcm_total(mVorbisFile.get(), -1)) / mChannelCount;
 
-    // Размер одного буфера на одну секунду
-    mBufferSize = mSampleRate;
-
-    mBufferL = new f32[mBufferSize];
-    mBufferR = (mChannelCount == 2) ? new f32[mBufferSize] : mBufferL;
+    // Размер буфера.
+    const u32 BUFFER_SIZE = mSampleRate * DECODE_BUFFER_SIZE_IN_MSEC / 1000;
+    mBufferSize = std::min(BUFFER_SIZE, mSampleCount);
+    
+    mBufferL.reset(new f32[mBufferSize]);
+    if (mChannelCount == 2)
+        mBufferR.reset(new f32[mBufferSize]);
 }
 
+// Установка курсора начала декодирования на заданный семпл.
 void ogg_decoder::seek( u32 sample )
 {
-    if (ov_pcm_seek(mVorbisFile, sample * mChannelCount) != 0)
+    if (ov_pcm_seek(mVorbisFile.get(), sample * mChannelCount) != 0)
         throw std::runtime_error("Seeking error.");
 
     // Сбрасываем указатель на текущий семпл
     mBufferOffset = 0;
     // Обнуляем буферы
-    mBufferRealSize = 0;
+    mBufferFilledSize = 0;
 }
 
 // Распаковывает из vorbis потока count семплов во внутренний буфер.
 // Возвращает количество прочитанных семплов.
-u32 ogg_decoder::unpack_vorbis()
+u32 ogg_decoder::unpack_to_buffer()
 {
     int currentSection;
-    u32 readSamples = 0;
+    u32 samplesRead = 0;
     
-    while (readSamples < mBufferSize)
+    while (samplesRead < mBufferSize)
     {
         float ** pcm;
-        int result = ov_read_float(mVorbisFile, &pcm, mBufferSize - readSamples, &currentSection);
+        int result = ov_read_float(mVorbisFile.get(), &pcm, mBufferSize - samplesRead, &currentSection);
         if (result == 0)
             break;
         else if (result > 0)
         {
-            memcpy(mBufferL + readSamples, pcm[0], result * sizeof(f32));
+            memcpy(mBufferL.get() + samplesRead, pcm[0], result * sizeof(f32));
             if (mChannelCount == 2)
-                memcpy(mBufferR + readSamples, pcm[1], result * sizeof(f32));
-            readSamples += result;
+                memcpy(mBufferR.get() + samplesRead, pcm[1], result * sizeof(f32));
+            samplesRead += result;
         }
     }
-    return readSamples;
+    return samplesRead;
 }
 
 // Копирует в левый и правый каналы count декодированных семплов.
 u32 ogg_decoder::unpack( f32 * left, f32 * right, u32 count )
 {
-    u32 samplesCount = 0;
+    u32 sampleCount = 0;
+    f32 * bufferLeft = mBufferL.get(),
+        * bufferRight = (mChannelCount == 2 ? mBufferR.get() : bufferLeft);
     
-    while (samplesCount < count)
+    while (sampleCount < count)
     {
-        if (mBufferOffset >= mBufferRealSize)
+        if (mBufferOffset >= mBufferFilledSize)
         {
             // Пытаемся подгрузить еще данных в буфер
             mBufferOffset = 0;
-            if (0 == (mBufferRealSize = unpack_vorbis()))
+            if (0 == (mBufferFilledSize = unpack_to_buffer()))
                 break;
         }
-        const u32 SAMPLES_COUNT = std::min(mBufferRealSize - mBufferOffset, count - samplesCount);
-        memcpy(left + samplesCount, mBufferL + mBufferOffset, SAMPLES_COUNT * sizeof(f32));
-        memcpy(right + samplesCount, mBufferR + mBufferOffset, SAMPLES_COUNT * sizeof(f32));
-        samplesCount += SAMPLES_COUNT;
+        const u32 SAMPLES_COUNT = std::min(mBufferFilledSize - mBufferOffset, count - sampleCount);
+        memcpy(left + sampleCount, bufferLeft + mBufferOffset, SAMPLES_COUNT * sizeof(f32));
+        memcpy(right + sampleCount, bufferRight + mBufferOffset, SAMPLES_COUNT * sizeof(f32));
+        sampleCount += SAMPLES_COUNT;
         mBufferOffset += SAMPLES_COUNT;
     }
-    return samplesCount;
-}
-
-ogg_decoder::~ogg_decoder()
-{
-    ov_clear(mVorbisFile);
-    delete mVorbisFile;
-    delete [] mBufferL;
-    if (mChannelCount == 2)
-        delete [] mBufferR;
+    return sampleCount;
 }

@@ -14,12 +14,11 @@
 namespace flamenco
 {
 
-// Декодер ogg vorbis файлов
+// Декодер ogg vorbis файлов.
 class ogg_decoder : noncopyable
 {
 public:
     ogg_decoder( std::auto_ptr<source> source );
-    ~ogg_decoder();
     
     // Копирует в левый и правый каналы count декодированных семплов.
     // Возвращает количество скопированных семплов, оно может быть меньше count,
@@ -44,7 +43,7 @@ public:
 private:
 	// Распаковывает из vorbis потока mBufferSize семплов во внутренние буферы.
 	// Возвращает количество прочитанных семплов.
-	u32 unpack_vorbis();
+	u32 unpack_to_buffer();
 
     // Источник данных.
     std::auto_ptr<source> mSource;
@@ -57,20 +56,38 @@ private:
     u32 mChannelCount;
 
     // Буферы для левого и правого каналов.
-    f32 * mBufferL;
-    f32 * mBufferR;
-    // Размер одного буфера в семплах
+    auto_array<f32> mBufferL, mBufferR;
+    // Размер одного буфера в семплах.
     u32 mBufferSize;
 
-	// Текущее количество семплов в одном буфере
-	u32 mBufferRealSize;
-	// Текущий семпл в буфере (левом для моно, обоих для стерео)
+	// Текущее количество семплов в каждом буфере.
+	u32 mBufferFilledSize;
+	// Текущий семпл в буфере.
 	u32 mBufferOffset;
-
+    
     // Входной логический поток
-    OggVorbis_File  *mVorbisFile;
+    template <typename>
+    struct VorbisFileDeleter
+    {
+        void operator()( OggVorbis_File * f )
+        {
+            ov_clear(f);
+            delete f;
+        }
+    };
+    auto_ptr<OggVorbis_File, VorbisFileDeleter> mVorbisFile;
+    
     // Информация о потоке
-    vorbis_info    *mVorbisInfo;
+    template <typename>
+    struct VorbisInfoDeleter
+    {
+        void operator()( vorbis_info * info )
+        {
+            vorbis_info_clear(info);
+            delete info;
+        }
+    };
+    auto_ptr<vorbis_info, VorbisInfoDeleter> mVorbisInfo;
 };
 
 } // namespace flamenco
