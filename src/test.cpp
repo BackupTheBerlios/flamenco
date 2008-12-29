@@ -6,7 +6,7 @@
  */
 #include <flamenco/flamenco.h>
 #pragma warning(disable:4201) // Отключение предупреждения о nameless struct.
-#include <MMSystem.h>
+#include <mmsystem.h>
 #include <dsound.h>
 #include <dxerr9.h>
 #include <iostream>
@@ -73,18 +73,26 @@ int main()
     LPDIRECTSOUNDBUFFER soundBuffer = NULL;
     check_directx(directSound->CreateSoundBuffer(&desc, &soundBuffer, NULL));
     
-    reference<stream<ogg_decoder> > sound = stream<ogg_decoder>::create(std::auto_ptr<source>(new file_source("input.ogg")));
+    //reference<stream<ogg_decoder> > sound = stream<ogg_decoder>::create(std::auto_ptr<source>(new file_source("input.ogg")));
     
     // Инициализация flamenco.
-    reference<pin> wave = sine::create(400);
-    //reference<ogg> wave = ogg::create("input.ogg");
+    mixer & mixer = mixer::singleton();
+    
+    reference<sound_stream_base> sound = stream<wavpack_decoder>::create(std::auto_ptr<source>(new file_source("input.wv")));
+    //assert(!src.get());
+    mixer.attach(sound);
+    /*
+    
+    reference<pin> sine = sine::create(400);
+    reference<ogg> wave = ogg::create("input.ogg");
     reference<pin> noise = noise::create();
     
     reference<volume_pan> vp = volume_pan::create(sound, 1.0f, 0.0f);
-    mixer & mixer = mixer::singleton();
+    
     //mixer.attach(sine);
     mixer.attach(vp);
     //mixer.attach(noise);
+    */
     
     // Заполнение звукового буфера.
     s16 * bufferPtr;
@@ -123,11 +131,11 @@ int main()
             switch (_getch())
             {
             case '+':
-                vp->pan.set(vp->pan() + 0.1f);
+                //vp->pan.set(vp->pan() + 0.1f);
                 continue;
             
             case '-':
-                vp->pan.set(vp->pan() - 0.1f);
+                //vp->pan.set(vp->pan() - 0.1f);
                 continue;
             
             case 'l':
@@ -136,7 +144,7 @@ int main()
             }
             // Если нажата любая другая клавиша - выходим.
             break;
-        }   
+        }
     }
     
     // Освобождение ресурсов.

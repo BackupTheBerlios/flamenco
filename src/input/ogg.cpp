@@ -6,8 +6,6 @@
  */
 #include <flamenco/flamenco.h>
 
-#include <iostream>
-
 using namespace flamenco;
 
 namespace 
@@ -138,13 +136,13 @@ u32 ogg_decoder::unpack( f32 * left, f32 * right, u32 count )
         samplesCount += SAMPLES_COUNT;
         mBufferOffset += SAMPLES_COUNT;
     }
-//    std::cout << "Result: " << samplesCount << '\n';
     return samplesCount;
 }
 
 ogg_decoder::~ogg_decoder()
 {
     ov_clear(mVorbisFile);
+    delete mVorbisFile;
     delete [] mBufferL;
     if (mChannelCount == 2)
         delete [] mBufferR;
